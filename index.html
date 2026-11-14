@@ -1,14 +1,14 @@
 <!DOCTYPE html>
-<html lang="zh-Hant">
+<html lang="zh-TW">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="artifact-type" content="tool">
   <meta name="design-style" content="showroom">
-  <title>立體圖形與總表面面積探索器 — 香港中一數學</title>
+  <title>3D 立體總表面面積與展開圖｜中一數學互動教學</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter+Tight:wght@600;700&family=Inter:wght@400;500;600&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@500;600;700&family=Inter:wght@400;500;600&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
   <style>
     :root {
@@ -19,6 +19,7 @@
       --surface-container-low: #f5f5f7;
       --surface-container: #e8e8ed;
       --surface-container-high: #dcdce1;
+      --surface-card: #ffffff;
 
       /* Ink */
       --on-surface: #1d1d1f;
@@ -30,6 +31,7 @@
 
       /* Accents */
       --primary: #006bd6;
+      --primary-hover: #0058b0;
       --on-primary: #ffffff;
       --primary-container: #e8f1fd;
       --on-primary-container: #0058b0;
@@ -38,41 +40,33 @@
       --error: #d70015;
       --on-error: #ffffff;
 
-      /* Semantic */
-      --positive: #248a3d;
-      --warning: #b25000;
-      --focus: #006bd6;
-
-      /* Geometry Color Coding (Base = RED, Lateral = BLUE) */
-      --face-base: #d70015;
-      --face-base-soft: #fde8ea;
-      --on-face-base-soft: #a30010;
-      --face-lateral: #006bd6;
-      --face-lateral-soft: #e8f1fd;
-      --on-face-lateral-soft: #0058b0;
-
-      /* 3D Stage tokens */
-      --stage-bg: #f0f0f4;
-      --model-neutral-base: #cfd0d8;
-      --model-neutral-side: #e2e3ea;
-      --model-edge: #1d1d1f;
-      --stage-grid-1: #c8c8cf;
-      --stage-grid-2: #e2e2e8;
-      --overlay-glass: rgba(251, 251, 253, 0.9);
-      --overlay-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
+      /* Prism Face Semantic Tokens (Red Base / Blue Lateral) */
+      --base-red: #d70015;
+      --base-red-bg: #fdecee;
+      --base-red-ink: #a30010;
+      --lateral-blue: #006bd6;
+      --lateral-blue-bg: #e8f1fd;
+      --lateral-blue-ink: #0051a8;
+      --stage-grid: #d2d2d7;
 
       /* Data series */
       --data-1: #006bd6;
-      --data-2: #bf4800;
+      --data-2: #d70015;
       --data-3: #248a3d;
       --data-4: #8944ab;
       --data-context: #aeaeb2;
+
+      /* Shared tokens */
+      --positive: #248a3d;
+      --positive-bg: #eaf6ed;
+      --warning: #bf4800;
+      --focus: #006bd6;
 
       /* Fonts */
       --font-headline: 'Noto Sans TC', 'Inter Tight', sans-serif;
       --font-body: 'Noto Sans TC', 'Inter', sans-serif;
       --font-label: 'Noto Sans TC', 'Inter', sans-serif;
-      --font-mono: 'IBM Plex Mono', 'Inter', monospace;
+      --font-num: 'Inter Tight', 'Inter', 'Noto Sans TC', sans-serif;
 
       /* Shape */
       --rounded: 9999px;
@@ -80,19 +74,23 @@
       --rounded-lg: 1.25rem;
       --rounded-full: 9999px;
 
-      /* Style effects */
+      /* Effects */
       --headline-tracking: -0.02em;
       --figure-tracking: -0.03em;
-      --tile-shadow-hover: 0 8px 28px rgb(0 0 0 / 0.08);
+      --tile-shadow-hover: 0 8px 28px rgba(0, 0, 0, 0.08);
+      --control-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+      --focus-shadow: 0 0 0 3px rgba(0, 107, 214, 0.25);
+      --overlay-bg: rgba(255, 255, 255, 0.9);
+      --label-badge-bg: rgba(29, 29, 31, 0.86);
 
       /* Type scale (Focused Tool) */
-      --display-size: clamp(1.75rem, 1.4rem + 1.2vw, 2.35rem);
-      --headline-size: clamp(1.1875rem, 1.05rem + 0.45vw, 1.4375rem);
-      --subhead-size: clamp(1rem, 0.95rem + 0.2vw, 1.125rem);
-      --body-size: clamp(0.9375rem, 0.9rem + 0.12vw, 1rem);
+      --display-size: clamp(1.75rem, 1.35rem + 1.4vw, 2.35rem);
+      --headline-size: clamp(1.2rem, 1.05rem + 0.45vw, 1.45rem);
+      --subhead-size: clamp(1rem, 0.95rem + 0.25vw, 1.125rem);
+      --body-size: clamp(0.9375rem, 0.9rem + 0.15vw, 1rem);
       --label-size: 0.75rem;
 
-      /* Spacing scale (4pt base) */
+      /* Spacing scale */
       --space-xs: 0.25rem;
       --space-sm: 0.5rem;
       --space-md: 1rem;
@@ -114,7 +112,7 @@
       overflow-x: clip;
       margin: 0;
       padding: 0;
-      background: var(--background);
+      background-color: var(--background);
       color: var(--on-surface);
       font-family: var(--font-body);
       font-size: var(--body-size);
@@ -122,46 +120,44 @@
       -webkit-font-smoothing: antialiased;
     }
     header { position: static !important; }
-
-    button, input, select, textarea {
-      font-family: inherit;
-    }
-
-    :focus-visible {
-      outline: 2px solid var(--focus);
-      outline-offset: 2px;
-    }
+    button, input, select, textarea { font-family: inherit; }
 
     .page-grid {
       display: grid;
       gap: var(--space-lg);
       padding: var(--space-lg);
-      max-width: 1260px;
+      max-width: 1240px;
       margin: 0 auto;
       overflow: hidden;
     }
     .page-grid * { min-width: 0; }
 
-    /* Headline stack */
+    /* Focus rings */
+    :focus-visible {
+      outline: 2px solid var(--focus);
+      outline-offset: 2px;
+    }
+
+    /* Header (Showroom centered headline stack) */
     .headline-stack {
       text-align: center;
-      padding-block: var(--space-lg) var(--space-sm);
+      padding-block: var(--space-md) var(--space-sm);
     }
     .eyebrow {
       display: inline-block;
       color: var(--secondary);
+      font-family: var(--font-label);
       font-size: var(--label-size);
       font-weight: 600;
-      margin-bottom: var(--space-sm);
-      letter-spacing: 0;
+      margin-bottom: var(--space-xs);
     }
     .headline-stack h1 {
+      margin: 0;
       font-family: var(--font-headline);
       font-size: var(--display-size);
       font-weight: 700;
       letter-spacing: var(--headline-tracking);
       line-height: 1.15;
-      margin: 0;
       color: var(--on-surface);
     }
     .headline-stack .lede {
@@ -172,273 +168,278 @@
     }
 
     /* Shape selector bar */
-    .shape-selector-wrap {
+    .shape-nav-wrap {
       display: flex;
       justify-content: center;
     }
     .segmented-track {
-      display: flex;
+      display: inline-flex;
       flex-wrap: wrap;
       justify-content: center;
       gap: var(--space-xs);
       background: var(--surface-container);
       padding: var(--space-xs);
-      border-radius: var(--rounded);
+      border-radius: var(--rounded-lg);
     }
-    .shape-btn {
+    .seg-btn {
       appearance: none;
       border: 0;
       background: transparent;
       color: var(--on-surface);
       font-size: 0.875rem;
       font-weight: 500;
-      padding: var(--space-sm) var(--space-md);
       min-height: 44px;
+      padding: var(--space-sm) var(--space-md);
       border-radius: var(--rounded);
       cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      gap: var(--space-sm);
-      transition: background-color var(--dur-short) var(--ease-in-out), color var(--dur-short) var(--ease-in-out);
+      transition: background-color var(--dur-short) var(--ease-out), color var(--dur-short) var(--ease-out);
       white-space: nowrap;
     }
-    .shape-btn:hover {
+    .seg-btn:hover {
       background: var(--surface-container-low);
     }
-    .shape-btn.is-active {
-      background: var(--background);
+    .seg-btn[aria-pressed="true"] {
+      background: var(--surface-card);
       color: var(--primary);
       font-weight: 600;
-      box-shadow: var(--overlay-shadow);
-    }
-    .shape-btn svg {
-      width: 18px;
-      height: 18px;
-      flex-shrink: 0;
+      box-shadow: var(--control-shadow);
     }
 
-    /* Main Workspace Grid */
-    .workspace-grid {
+    /* Main two-column workbench */
+    .workbench {
       display: grid;
       grid-template-columns: minmax(0, 1.32fr) minmax(0, 1fr);
-      gap: var(--space-md);
+      gap: var(--space-lg);
       align-items: start;
     }
-    .col-stack {
-      display: grid;
-      gap: var(--space-md);
-    }
 
-    /* Showroom Borderless Tiles */
+    /* Showroom borderless rounded tile */
     .tile {
       background: var(--surface-container-low);
       border-radius: var(--rounded-lg);
       padding: var(--space-lg);
       border: 0;
     }
-    .tile-header {
+
+    /* 3D Viewer Tile */
+    .viewer-tile {
       display: flex;
+      flex-direction: column;
+      gap: var(--space-md);
+      padding: var(--space-md);
+    }
+    .viewer-header {
+      display: flex;
+      flex-wrap: wrap;
       align-items: center;
       justify-content: space-between;
       gap: var(--space-sm);
-      margin-bottom: var(--space-md);
-      flex-wrap: wrap;
+      padding-inline: var(--space-xs);
     }
-    .tile-title {
-      font-family: var(--font-headline);
-      font-size: var(--headline-size);
-      font-weight: 700;
-      line-height: 1.25;
-      margin: 0;
-      color: var(--on-surface);
-    }
-    .tile-subtitle {
-      font-size: var(--label-size);
-      color: var(--on-surface-variant);
-      font-weight: 500;
-    }
-
-    /* 3D Stage Tile */
-    .stage-tile {
-      padding: 0;
-      overflow: hidden;
-      position: relative;
-      background: var(--stage-bg);
-    }
-    .stage-canvas-wrap {
-      position: relative;
-      width: 100%;
-      height: 460px;
-      min-height: 420px;
-      cursor: grab;
-      touch-action: none;
-      user-select: none;
-    }
-    .stage-canvas-wrap:active {
-      cursor: grabbing;
-    }
-    .stage-canvas-wrap canvas {
-      display: block;
-      width: 100%;
-      height: 100%;
-    }
-    .stage-labels-layer {
-      position: absolute;
-      inset: 0;
-      pointer-events: none;
-      overflow: hidden;
-    }
-    .dim-tag-3d {
-      position: absolute;
-      transform: translate(-50%, -50%);
-      background: var(--overlay-glass);
-      color: var(--on-surface);
-      font-family: var(--font-mono);
-      font-size: 0.75rem;
-      font-weight: 600;
-      padding: 0.2rem 0.5rem;
-      border-radius: var(--rounded);
-      box-shadow: var(--overlay-shadow);
-      white-space: nowrap;
-      font-variant-numeric: tabular-nums;
-      transition: opacity var(--dur-micro) var(--ease-out);
-    }
-    .dim-tag-3d.is-base {
-      color: var(--on-face-base-soft);
-      background: var(--face-base-soft);
-    }
-    .dim-tag-3d.is-lateral {
-      color: var(--on-face-lateral-soft);
-      background: var(--face-lateral-soft);
-    }
-
-    /* HUD Overlays */
-    .stage-hud-top {
-      position: absolute;
-      top: var(--space-md);
-      left: var(--space-md);
-      right: var(--space-md);
+    .legend-group {
       display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
+      flex-wrap: wrap;
+      align-items: center;
       gap: var(--space-sm);
-      pointer-events: none;
-      flex-wrap: wrap;
-    }
-    .hud-group {
-      display: flex;
-      flex-wrap: wrap;
-      gap: var(--space-xs);
-      pointer-events: auto;
     }
     .legend-pill {
       display: inline-flex;
       align-items: center;
-      gap: var(--space-sm);
-      background: var(--overlay-glass);
+      gap: var(--space-xs);
       padding: var(--space-xs) var(--space-md);
-      min-height: 36px;
       border-radius: var(--rounded);
       font-size: var(--label-size);
-      font-weight: 500;
-      color: var(--on-surface);
-      box-shadow: var(--overlay-shadow);
+      font-weight: 600;
     }
-    .swatch {
-      width: 11px;
-      height: 11px;
-      border-radius: 3px;
-      display: inline-block;
+    .legend-pill.is-red {
+      background: var(--base-red-bg);
+      color: var(--base-red-ink);
+    }
+    .legend-pill.is-blue {
+      background: var(--lateral-blue-bg);
+      color: var(--lateral-blue-ink);
+    }
+    .swatch-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: var(--rounded-full);
       flex-shrink: 0;
     }
-    .swatch.base { background: var(--face-base); }
-    .swatch.lateral { background: var(--face-lateral); }
-    .swatch.neutral { background: var(--model-neutral-base); }
+    .swatch-dot.red { background: var(--base-red); }
+    .swatch-dot.blue { background: var(--lateral-blue); }
 
-    .hud-btn {
+    .view-actions {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: var(--space-xs);
+    }
+    .icon-pill-btn {
       appearance: none;
-      border: 0;
-      background: var(--overlay-glass);
+      border: 1px solid var(--outline);
+      background: var(--surface-card);
       color: var(--on-surface);
-      font-size: var(--label-size);
+      font-size: 0.8125rem;
       font-weight: 500;
+      min-height: 38px;
       padding: var(--space-xs) var(--space-md);
-      min-height: 36px;
       border-radius: var(--rounded);
       cursor: pointer;
       display: inline-flex;
       align-items: center;
-      gap: 0.35rem;
-      box-shadow: var(--overlay-shadow);
-      transition: background-color var(--dur-micro) var(--ease-in-out), color var(--dur-micro) var(--ease-in-out);
+      gap: var(--space-xs);
+      transition: background-color var(--dur-micro) var(--ease-out), border-color var(--dur-micro) var(--ease-out);
     }
-    .hud-btn:hover {
-      background: var(--background);
+    .icon-pill-btn:hover {
+      background: var(--surface-container-low);
+      border-color: var(--on-surface-variant);
     }
-    .hud-btn.is-on {
-      background: var(--primary);
-      color: var(--on-primary);
-    }
-    .hud-btn.icon-only {
-      padding: var(--space-xs) 0.65rem;
-      font-family: var(--font-mono);
-      font-weight: 600;
+    .icon-pill-btn[aria-pressed="true"] {
+      background: var(--primary-container);
+      color: var(--on-primary-container);
+      border-color: var(--primary);
     }
 
-    .stage-hud-bottom {
-      position: absolute;
-      bottom: var(--space-sm);
-      left: var(--space-md);
-      right: var(--space-md);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: var(--space-sm);
-      pointer-events: none;
-      flex-wrap: wrap;
+    /* 3D Canvas Stage */
+    .canvas-stage {
+      position: relative;
+      width: 100%;
+      min-height: 460px;
+      height: 480px;
+      background: var(--background);
+      border-radius: var(--rounded-md);
+      overflow: hidden;
+      touch-action: none;
+      cursor: grab;
+    }
+    .canvas-stage:active {
+      cursor: grabbing;
+    }
+    .canvas-stage canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
     }
     .stage-hint {
-      background: var(--overlay-glass);
+      position: absolute;
+      left: var(--space-md);
+      bottom: var(--space-md);
+      background: var(--overlay-bg);
       color: var(--on-surface-variant);
       font-size: var(--label-size);
-      padding: 0.25rem 0.75rem;
+      padding: var(--space-xs) var(--space-md);
       border-radius: var(--rounded);
-      box-shadow: var(--overlay-shadow);
+      pointer-events: none;
+      backdrop-filter: blur(6px);
+    }
+    .zoom-floating {
+      position: absolute;
+      right: var(--space-md);
+      bottom: var(--space-md);
+      display: flex;
+      gap: var(--space-xs);
+    }
+    .zoom-circle-btn {
+      appearance: none;
+      width: 40px;
+      height: 40px;
+      border-radius: var(--rounded-full);
+      border: 1px solid var(--outline);
+      background: var(--overlay-bg);
+      color: var(--on-surface);
+      font-size: 1.125rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: grid;
+      place-items: center;
+      transition: background-color var(--dur-micro) var(--ease-out);
+    }
+    .zoom-circle-btn:hover {
+      background: var(--surface-card);
     }
 
-    .stage-fallback {
+    /* 3D Projected HTML Labels */
+    .labels-overlay {
       position: absolute;
       inset: 0;
-      display: none;
-      place-items: center;
-      padding: var(--space-lg);
-      text-align: center;
-      color: var(--on-surface-variant);
-      background: var(--surface-container-low);
+      pointer-events: none;
+      overflow: hidden;
+    }
+    .dim-tag {
+      position: absolute;
+      top: 0;
+      left: 0;
+      transform: translate(-50%, -50%);
+      background: var(--label-badge-bg);
+      color: var(--background);
+      font-family: var(--font-num);
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: var(--rounded);
+      white-space: nowrap;
+      will-change: transform, opacity;
+      transition: opacity var(--dur-micro) var(--ease-out);
+    }
+    .dim-tag.is-red-tag {
+      background: var(--base-red);
+      color: var(--on-primary);
+    }
+    .dim-tag.is-blue-tag {
+      background: var(--lateral-blue);
+      color: var(--on-primary);
     }
 
-    /* Unfold Control Tile */
-    .unfold-row {
+    /* Net Unfolding Control Dock */
+    .unfold-dock {
+      background: var(--surface-card);
+      border-radius: var(--rounded-md);
+      padding: var(--space-md);
       display: flex;
+      flex-direction: column;
+      gap: var(--space-md);
+    }
+    .mode-switch-row {
+      display: flex;
+      flex-wrap: wrap;
       align-items: center;
       justify-content: space-between;
-      gap: var(--space-md);
-      flex-wrap: wrap;
-      margin-bottom: var(--space-sm);
+      gap: var(--space-sm);
     }
-    .unfold-status {
-      font-family: var(--font-mono);
-      font-size: 0.875rem;
+    .dock-label {
+      font-size: var(--label-size);
       font-weight: 600;
-      color: var(--primary);
-      background: var(--primary-container);
-      padding: 0.25rem 0.75rem;
-      border-radius: var(--rounded);
-      font-variant-numeric: tabular-nums;
+      color: var(--on-surface-variant);
     }
-    .unfold-controls {
-      display: grid;
-      grid-template-columns: auto minmax(0, 1fr) auto;
+    .mode-track {
+      display: inline-flex;
+      flex-wrap: wrap;
+      gap: var(--space-xs);
+      background: var(--surface-container-low);
+      padding: var(--space-xs);
+      border-radius: var(--rounded);
+    }
+    .mode-btn {
+      appearance: none;
+      border: 0;
+      background: transparent;
+      color: var(--on-surface);
+      font-size: 0.8125rem;
+      font-weight: 500;
+      min-height: 38px;
+      padding: var(--space-xs) var(--space-md);
+      border-radius: var(--rounded);
+      cursor: pointer;
+      transition: background-color var(--dur-short) var(--ease-out), color var(--dur-short) var(--ease-out);
+    }
+    .mode-btn[aria-pressed="true"] {
+      background: var(--primary);
+      color: var(--on-primary);
+      font-weight: 600;
+    }
+
+    .slider-action-row {
+      display: flex;
       align-items: center;
       gap: var(--space-md);
     }
@@ -446,466 +447,397 @@
       appearance: none;
       background: var(--primary);
       color: var(--on-primary);
-      border-radius: var(--rounded);
-      font-size: 0.875rem;
-      font-weight: 500;
-      padding: var(--space-sm) var(--space-lg);
-      min-height: 44px;
       border: 0;
+      border-radius: var(--rounded);
+      min-height: 44px;
+      padding: var(--space-sm) var(--space-lg);
+      font-size: 0.875rem;
+      font-weight: 600;
       cursor: pointer;
       display: inline-flex;
       align-items: center;
-      justify-content: center;
       gap: var(--space-xs);
       white-space: nowrap;
-      transition: opacity var(--dur-micro) var(--ease-out);
+      transition: background-color var(--dur-micro) var(--ease-out);
     }
     .btn-primary:hover {
-      opacity: 0.9;
+      background: var(--primary-hover);
     }
-    .btn-secondary {
-      appearance: none;
-      background: var(--surface-container);
-      color: var(--on-surface);
-      border-radius: var(--rounded);
-      font-size: 0.8125rem;
-      font-weight: 500;
-      padding: var(--space-xs) var(--space-md);
-      min-height: 36px;
-      border: 0;
-      cursor: pointer;
-      white-space: nowrap;
-      transition: background-color var(--dur-micro) var(--ease-in-out);
-    }
-    .btn-secondary:hover {
-      background: var(--surface-container-high);
-    }
-    .btn-secondary.is-active {
-      background: var(--tertiary);
-      color: var(--background);
-    }
-    .quick-snap-row {
-      display: flex;
-      gap: var(--space-sm);
-      align-items: center;
-      flex-wrap: wrap;
-      margin-top: var(--space-sm);
-    }
-
-    /* Range sliders */
-    input[type="range"] {
-      -webkit-appearance: none;
-      appearance: none;
-      width: 100%;
-      height: 8px;
-      border-radius: var(--rounded);
-      background: var(--surface-container);
-      cursor: pointer;
-    }
-    input[type="range"]::-webkit-slider-thumb {
-      -webkit-appearance: none;
-      appearance: none;
-      width: 22px;
-      height: 22px;
-      border-radius: var(--rounded);
-      background: var(--primary);
-      border: 3px solid var(--background);
-      box-shadow: var(--overlay-shadow);
-      cursor: pointer;
-      transition: transform var(--dur-micro) var(--ease-out);
-    }
-    input[type="range"]::-webkit-slider-thumb:hover {
-      transform: scale(1.1);
-    }
-    input[type="range"]::-moz-range-thumb {
-      width: 22px;
-      height: 22px;
-      border-radius: var(--rounded);
-      background: var(--primary);
-      border: 3px solid var(--background);
-      box-shadow: var(--overlay-shadow);
-      cursor: pointer;
-    }
-
-    /* Dimension Inputs Tile */
-    .dims-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr));
-      gap: var(--space-md);
-    }
-    .dim-control {
-      background: var(--background);
-      border-radius: var(--rounded-md);
-      padding: var(--space-md);
-      display: grid;
-      gap: var(--space-sm);
-    }
-    .dim-label-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: end;
-      gap: var(--space-sm);
-    }
-    .dim-label {
-      font-size: 0.875rem;
-      font-weight: 600;
-      color: var(--on-surface);
+    .slider-wrap {
+      flex: 1;
       display: flex;
       flex-direction: column;
-      gap: 2px;
-    }
-    .dim-hint {
-      font-size: var(--label-size);
-      font-weight: 400;
-      color: var(--on-surface-variant);
-    }
-    .dim-number-wrap {
-      display: inline-flex;
-      align-items: center;
       gap: var(--space-xs);
     }
-    .dim-number {
-      width: 72px;
-      padding: 0.35rem 0.55rem;
-      border-radius: var(--rounded);
-      border: 1px solid var(--outline);
-      background: var(--background);
-      color: var(--on-surface);
-      font-family: var(--font-mono);
-      font-size: 0.875rem;
-      font-weight: 500;
-      text-align: right;
-      font-variant-numeric: tabular-nums;
-    }
-    .dim-number:focus {
-      outline: 2px solid var(--focus);
-      border-color: var(--focus);
-    }
-    .dim-unit {
-      font-family: var(--font-mono);
-      font-size: var(--label-size);
-      color: var(--on-surface-variant);
-    }
-    .derived-note {
-      margin-top: var(--space-md);
-      padding: var(--space-sm) var(--space-md);
-      background: var(--background);
-      border-radius: var(--rounded-md);
-      font-size: 0.8125rem;
-      color: var(--on-surface-variant);
+    .slider-meta {
       display: flex;
-      flex-wrap: wrap;
-      gap: var(--space-md);
-      align-items: center;
-    }
-    .derived-note strong {
-      color: var(--on-surface);
-      font-family: var(--font-mono);
-      font-variant-numeric: tabular-nums;
-    }
-    .presets-row {
-      margin-top: var(--space-md);
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      gap: var(--space-sm);
-    }
-    .presets-label {
+      justify-content: space-between;
+      align-items: baseline;
       font-size: var(--label-size);
       font-weight: 600;
-      color: var(--on-surface-variant);
     }
-    .preset-chip {
+    .slider-pct {
+      font-family: var(--font-num);
+      font-variant-numeric: tabular-nums;
+      color: var(--primary);
+      font-size: 0.9375rem;
+    }
+    input[type="range"] {
+      width: 100%;
+      accent-color: var(--primary);
+      cursor: pointer;
+      min-height: 28px;
+      margin: 0;
+    }
+    .snap-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-sm);
+    }
+    .snap-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-xs);
+    }
+    .chip-btn {
       appearance: none;
       border: 0;
-      background: var(--primary-container);
-      color: var(--on-primary-container);
+      background: var(--surface-container-low);
+      color: var(--on-surface);
       font-size: var(--label-size);
       font-weight: 500;
-      padding: 0.4rem 0.85rem;
-      min-height: 36px;
+      min-height: 34px;
+      padding: var(--space-xs) var(--space-md);
       border-radius: var(--rounded);
       cursor: pointer;
-      transition: background-color var(--dur-micro) var(--ease-in-out);
+      transition: background-color var(--dur-micro) var(--ease-out);
     }
-    .preset-chip:hover {
+    .chip-btn:hover {
       background: var(--surface-container);
     }
-
-    /* Right Column: Live Calculator */
-    .tile.figure {
-      text-align: center;
-    }
-    .figure-label {
-      font-size: var(--label-size);
-      font-weight: 600;
+    .mode-explainer {
+      font-size: 0.8125rem;
       color: var(--on-surface-variant);
-      margin-bottom: var(--space-xs);
-    }
-    .figure-value-row {
-      display: flex;
-      align-items: baseline;
-      justify-content: center;
-      gap: var(--space-xs);
-      flex-wrap: wrap;
-    }
-    .figure-value {
-      font-family: var(--font-headline);
-      font-size: clamp(2.1rem, 1.7rem + 1.4vw, 2.85rem);
-      font-weight: 700;
-      letter-spacing: var(--figure-tracking);
-      line-height: 1.1;
-      color: var(--on-surface);
-      font-variant-numeric: tabular-nums;
-    }
-    .figure-unit {
-      font-family: var(--font-mono);
-      font-size: 1.05rem;
-      font-weight: 600;
-      color: var(--on-surface-variant);
-    }
-    .figure-alt {
-      margin-top: var(--space-xs);
-      font-family: var(--font-mono);
-      font-size: 0.875rem;
-      color: var(--primary);
-      font-weight: 500;
+      margin: 0;
+      padding-top: var(--space-xs);
+      border-top: 1px solid var(--outline-variant);
     }
 
-    /* Proportion Bar (Base vs Lateral) */
-    .ratio-bar-wrap {
-      margin-top: var(--space-md);
-      text-align: left;
-    }
-    .ratio-bar {
-      height: 10px;
-      width: 100%;
-      border-radius: var(--rounded);
-      background: var(--surface-container);
-      overflow: hidden;
+    /* Right Column: Calculator & Dimension Controls */
+    .side-stack {
       display: flex;
+      flex-direction: column;
+      gap: var(--space-lg);
     }
-    .ratio-seg-base {
-      background: var(--face-base);
-      height: 100%;
-      transition: width var(--dur-short) var(--ease-out);
+
+    /* Hero Output Card (Lead with the Answer) */
+    .calc-tile {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-md);
     }
-    .ratio-seg-lateral {
-      background: var(--face-lateral);
-      height: 100%;
-      transition: width var(--dur-short) var(--ease-out);
-    }
-    .split-cards {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-      gap: var(--space-sm);
-      margin-top: var(--space-md);
-    }
-    .split-card {
-      border-radius: var(--rounded-md);
-      padding: var(--space-md);
-      text-align: left;
-    }
-    .split-card.base-card {
-      background: var(--face-base-soft);
-      color: var(--on-face-base-soft);
-    }
-    .split-card.lateral-card {
-      background: var(--face-lateral-soft);
-      color: var(--on-face-lateral-soft);
-    }
-    .split-card-label {
-      font-size: var(--label-size);
-      font-weight: 600;
+    .tile-head {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: var(--space-xs);
-    }
-    .split-card-val {
-      font-family: var(--font-mono);
-      font-size: 1.1875rem;
-      font-weight: 600;
-      margin-top: var(--space-xs);
-      font-variant-numeric: tabular-nums;
-      color: var(--on-surface);
-    }
-    .split-card-sub {
-      font-size: var(--label-size);
-      margin-top: 2px;
-      opacity: 0.9;
-    }
-
-    /* Faces Breakdown Table */
-    .faces-list {
-      display: grid;
-      gap: var(--space-xs);
-    }
-    .face-row {
-      display: grid;
-      grid-template-columns: auto minmax(0, 1fr) auto;
-      align-items: center;
       gap: var(--space-sm);
-      background: var(--background);
-      padding: var(--space-sm) var(--space-md);
+    }
+    .tile-head h2 {
+      margin: 0;
+      font-family: var(--font-headline);
+      font-size: var(--headline-size);
+      font-weight: 700;
+      letter-spacing: var(--headline-tracking);
+      color: var(--on-surface);
+    }
+    .tsa-hero {
+      background: var(--surface-card);
       border-radius: var(--rounded-md);
+      padding: var(--space-lg);
+      text-align: center;
     }
-    .face-name {
-      font-size: 0.875rem;
-      font-weight: 600;
-      color: var(--on-surface);
-    }
-    .face-calc {
-      font-family: var(--font-mono);
+    .tsa-hero-label {
       font-size: var(--label-size);
+      font-weight: 600;
       color: var(--on-surface-variant);
+    }
+    .tsa-hero-value {
+      font-family: var(--font-num);
+      font-size: clamp(2rem, 1.6rem + 1.4vw, 2.75rem);
+      font-weight: 700;
+      letter-spacing: var(--figure-tracking);
+      line-height: 1.15;
+      color: var(--on-surface);
+      margin-block: var(--space-xs);
       font-variant-numeric: tabular-nums;
     }
-    .face-area {
-      font-family: var(--font-mono);
-      font-size: 0.9375rem;
+    .tsa-hero-unit {
+      font-size: 0.45em;
       font-weight: 600;
-      color: var(--on-surface);
-      font-variant-numeric: tabular-nums;
-      white-space: nowrap;
+      color: var(--on-surface-variant);
+      margin-left: var(--space-xs);
+    }
+    .tsa-formula-chip {
+      display: inline-block;
+      background: var(--surface-container-low);
+      color: var(--on-surface-variant);
+      font-family: var(--font-num);
+      font-size: var(--label-size);
+      font-weight: 600;
+      padding: var(--space-xs) var(--space-md);
+      border-radius: var(--rounded);
     }
 
-    /* Step-by-Step Math Formulas */
+    /* Step-by-step Cards */
     .steps-list {
-      display: grid;
+      display: flex;
+      flex-direction: column;
       gap: var(--space-sm);
     }
     .step-card {
-      background: var(--background);
+      background: var(--surface-card);
       border-radius: var(--rounded-md);
       padding: var(--space-md);
-      display: grid;
-      gap: var(--space-xs);
+      transition: box-shadow var(--dur-short) var(--ease-out), transform var(--dur-short) var(--ease-out);
+      cursor: default;
     }
-    .step-head {
+    .step-card.is-red-card {
+      background: var(--base-red-bg);
+    }
+    .step-card.is-blue-card {
+      background: var(--lateral-blue-bg);
+    }
+    .step-card:hover {
+      box-shadow: var(--tile-shadow-hover);
+    }
+    .step-top {
       display: flex;
-      align-items: center;
+      justify-content: space-between;
+      align-items: baseline;
       gap: var(--space-sm);
     }
-    .step-badge {
-      font-size: var(--label-size);
+    .step-title {
+      font-size: 0.875rem;
       font-weight: 700;
-      padding: 0.15rem 0.6rem;
-      border-radius: var(--rounded);
+      display: flex;
+      align-items: center;
+      gap: var(--space-xs);
+    }
+    .step-badge {
+      display: inline-block;
+      font-family: var(--font-num);
+      font-size: 0.75rem;
+      font-weight: 700;
+      width: 22px;
+      height: 22px;
+      line-height: 22px;
+      text-align: center;
+      border-radius: var(--rounded-full);
+      background: var(--surface-container);
+      color: var(--on-surface);
+      flex-shrink: 0;
+    }
+    .is-red-card .step-title { color: var(--base-red-ink); }
+    .is-red-card .step-badge { background: var(--base-red); color: var(--on-primary); }
+    .is-blue-card .step-title { color: var(--lateral-blue-ink); }
+    .is-blue-card .step-badge { background: var(--lateral-blue); color: var(--on-primary); }
+
+    .step-val {
+      font-family: var(--font-num);
+      font-size: 1.125rem;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      color: var(--on-surface);
       white-space: nowrap;
     }
-    .step-badge.base {
-      background: var(--face-base-soft);
-      color: var(--on-face-base-soft);
-    }
-    .step-badge.lateral {
-      background: var(--face-lateral-soft);
-      color: var(--on-face-lateral-soft);
-    }
-    .step-badge.total {
-      background: var(--tertiary);
-      color: var(--background);
-    }
-    .step-title {
-      font-size: 0.9375rem;
-      font-weight: 600;
-      color: var(--on-surface);
-    }
-    .step-formula {
-      font-family: var(--font-mono);
+    .is-red-card .step-val { color: var(--base-red-ink); }
+    .is-blue-card .step-val { color: var(--lateral-blue-ink); }
+
+    .step-math {
+      margin-top: var(--space-xs);
       font-size: 0.8125rem;
       color: var(--on-surface-variant);
-      background: var(--surface-container-low);
-      padding: var(--space-xs) var(--space-sm);
-      border-radius: 0.5rem;
-      overflow-x: auto;
+      font-family: var(--font-num);
+      line-height: 1.5;
+      word-break: break-word;
     }
-    .step-work {
-      font-family: var(--font-mono);
-      font-size: 0.875rem;
-      color: var(--on-surface);
-      font-variant-numeric: tabular-nums;
-      line-height: 1.6;
-    }
-    .step-work .ans {
-      font-weight: 700;
-      color: var(--primary);
-    }
-    .step-work .ans-base {
-      font-weight: 700;
-      color: var(--on-face-base-soft);
+    .is-red-card .step-math { color: var(--base-red-ink); }
+    .is-blue-card .step-math { color: var(--lateral-blue-ink); }
+
+    /* Quiz Mask state */
+    .masked-ans {
+      filter: blur(6px);
+      user-select: none;
+      opacity: 0.45;
+      transition: filter var(--dur-short) var(--ease-out), opacity var(--dur-short) var(--ease-out);
     }
 
-    .concept-tip {
-      margin-top: var(--space-md);
-      background: var(--background);
-      border-radius: var(--rounded-md);
-      padding: var(--space-md);
+    /* Dimension Controls Tile */
+    .dims-tile {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-md);
+    }
+    .sub-preset-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-xs);
+    }
+    .dim-controls-list {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-md);
+    }
+    .dim-row {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-xs);
+    }
+    .dim-label-line {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
       font-size: 0.875rem;
+      font-weight: 600;
+    }
+    .dim-label-line label {
       color: var(--on-surface);
     }
-    .concept-tip-title {
+    .dim-sub-hint {
       font-size: var(--label-size);
-      font-weight: 700;
-      color: var(--secondary);
-      margin-bottom: var(--space-xs);
+      font-weight: 500;
+      color: var(--on-surface-variant);
     }
-
-    /* Pi mode selector for cylinder */
-    .pi-toggle-group {
+    .dim-input-pair {
+      display: flex;
+      align-items: center;
+      gap: var(--space-md);
+    }
+    .dim-input-pair input[type="range"] {
+      flex: 1;
+    }
+    .num-box-wrap {
       display: inline-flex;
-      gap: 2px;
-      background: var(--surface-container);
-      padding: 3px;
+      align-items: center;
+      gap: var(--space-xs);
+      background: var(--background);
+      border: 1px solid var(--outline);
       border-radius: var(--rounded);
+      padding: var(--space-xs) var(--space-sm) var(--space-xs) var(--space-md);
+      min-height: 44px;
     }
-    .pi-btn {
-      appearance: none;
+    .num-box-wrap:focus-within {
+      border-color: var(--primary);
+      box-shadow: var(--focus-shadow);
+    }
+    .num-input {
+      width: 56px;
       border: 0;
       background: transparent;
       color: var(--on-surface);
-      font-size: var(--label-size);
-      font-weight: 500;
-      padding: 0.25rem 0.65rem;
-      border-radius: var(--rounded);
-      cursor: pointer;
-    }
-    .pi-btn.is-active {
-      background: var(--background);
-      color: var(--primary);
+      font-family: var(--font-num);
+      font-size: 0.9375rem;
       font-weight: 600;
-      box-shadow: var(--overlay-shadow);
+      font-variant-numeric: tabular-nums;
+      text-align: right;
+      outline: none;
+    }
+    .unit-tag {
+      font-size: var(--label-size);
+      color: var(--on-surface-variant);
+      font-weight: 500;
+    }
+    .constraint-note {
+      margin: 0;
+      font-size: var(--label-size);
+      color: var(--secondary);
+      font-weight: 500;
+      min-height: 1.2em;
     }
 
-    /* Responsive adjustments */
-    @media (max-width: 960px) {
-      .workspace-grid {
-        grid-template-columns: minmax(0, 1fr);
+    /* Educational Concepts & Reference Table Section */
+    .concepts-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr));
+      gap: var(--space-lg);
+    }
+    .concept-card h3 {
+      margin: 0 0 var(--space-xs);
+      font-family: var(--font-headline);
+      font-size: var(--subhead-size);
+      font-weight: 700;
+      color: var(--on-surface);
+    }
+    .concept-card p {
+      margin: 0;
+      font-size: 0.9375rem;
+      color: var(--on-surface-variant);
+    }
+    .formula-table-wrap {
+      overflow-x: auto;
+    }
+    table.ref-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9375rem;
+    }
+    table.ref-table th {
+      text-align: left;
+      padding: var(--space-sm) var(--space-md);
+      color: var(--on-surface-variant);
+      font-weight: 600;
+      font-size: var(--label-size);
+      border-bottom: 1px solid var(--outline-variant);
+    }
+    table.ref-table td {
+      padding: var(--space-md);
+      border-bottom: 1px solid var(--outline-variant);
+      font-variant-numeric: tabular-nums;
+    }
+    table.ref-table tr.is-current-row td {
+      background: var(--primary-container);
+      color: var(--on-primary-container);
+      font-weight: 600;
+    }
+
+    .footer-note {
+      text-align: center;
+      font-size: var(--label-size);
+      color: var(--on-surface-variant);
+      padding-block: var(--space-sm) var(--space-lg);
+    }
+
+    /* Responsive Breakpoints */
+    @media (max-width: 920px) {
+      .workbench {
+        grid-template-columns: 1fr;
+      }
+      .canvas-stage {
+        min-height: 400px;
+        height: 420px;
       }
     }
     @media (max-width: 640px) {
       .page-grid {
-        padding: var(--space-sm);
+        padding: var(--space-md);
         gap: var(--space-md);
       }
       .tile {
         padding: var(--space-md);
       }
-      .stage-tile {
-        padding: 0;
-      }
-      .stage-canvas-wrap {
-        height: 360px;
+      .canvas-stage {
         min-height: 340px;
+        height: 360px;
       }
-      .unfold-controls {
-        grid-template-columns: minmax(0, 1fr);
-      }
-      .split-cards {
-        grid-template-columns: minmax(0, 1fr);
+      .slider-action-row {
+        flex-direction: column;
+        align-items: stretch;
       }
     }
 
+    /* Reduced Motion */
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after {
         animation-duration: 0.01ms !important;
@@ -916,770 +848,349 @@
   </style>
 </head>
 <body>
-  <div class="page-grid">
-    <!-- Title Header -->
+  <main class="page-grid">
+    <!-- Title Block -->
     <header class="headline-stack">
-      <span class="eyebrow">香港中學一年級數學 · 面積與體積</span>
-      <h1>立體圖形與總表面面積探索器</h1>
-      <p class="lede">
-        選擇不同柱體，自由拖曳旋轉與縮放 3D 模型，拉動展開圖滑桿觀察立體如何分解為平面展開圖，並即時查看底面積、側面積與總表面面積的詳細計算步驟。
-      </p>
+      <span class="eyebrow">中一數學 · 柱體總表面面積與展開圖</span>
+      <h1>3D 立體總表面面積與展開圖探索器</h1>
+      <p class="lede">拖曳旋轉 3D 柱體並拉動展開圖滑桿，即時對照「側面連排展開」與「側面獨立分開拆解」，理解紅色底面與藍色側面如何組成總表面面積。</p>
     </header>
 
-    <!-- 3D Shape Selector -->
-    <nav class="shape-selector-wrap" aria-label="選擇立體圖形">
-      <div class="segmented-track" role="tablist">
-        <button type="button" class="shape-btn is-active" id="tab-parallelogram" role="tab" aria-selected="true" onclick="selectShape('parallelogram')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
-            <polygon points="6,16 14,16 18,8 10,8"/>
-            <path d="M6 16v4h8l4-8v-4"/>
-          </svg>
-          平行四邊形柱體
-        </button>
-        <button type="button" class="shape-btn" id="tab-cuboid" role="tab" aria-selected="false" onclick="selectShape('cuboid')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
-            <rect x="4" y="8" width="12" height="11"/>
-            <path d="M4 8l4-4h12v11l-4 4M16 8l4-4"/>
-          </svg>
-          長方體
-        </button>
-        <button type="button" class="shape-btn" id="tab-cube" role="tab" aria-selected="false" onclick="selectShape('cube')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
-            <path d="M12 3l8 4.5v9L12 21l-8-4.5v-9L12 3z"/>
-            <path d="M12 12l8-4.5M12 12v9M12 12L4 7.5"/>
-          </svg>
-          正方體
-        </button>
-        <button type="button" class="shape-btn" id="tab-triangular" role="tab" aria-selected="false" onclick="selectShape('triangular')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
-            <polygon points="5,18 15,18 10,9"/>
-            <path d="M10 9l5-4 5 9-5 4M15 18l5-4"/>
-          </svg>
-          三角柱體
-        </button>
-        <button type="button" class="shape-btn" id="tab-cylinder" role="tab" aria-selected="false" onclick="selectShape('cylinder')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
-            <ellipse cx="12" cy="6" rx="7" ry="3"/>
-            <path d="M5 6v12c0 1.66 3.13 3 7 3s7-1.34 7-3V6"/>
-          </svg>
-          圓柱體
-        </button>
+    <!-- Shape Selector -->
+    <nav class="shape-nav-wrap" aria-label="選擇柱體形狀">
+      <div class="segmented-track" id="shape-selector">
+        <button type="button" class="seg-btn" data-shape="cuboid" aria-pressed="true" onclick="selectShape('cuboid')">長方體</button>
+        <button type="button" class="seg-btn" data-shape="cube" aria-pressed="false" onclick="selectShape('cube')">正方體</button>
+        <button type="button" class="seg-btn" data-shape="parallelogram" aria-pressed="false" onclick="selectShape('parallelogram')">平行四邊形柱體</button>
+        <button type="button" class="seg-btn" data-shape="triangle" aria-pressed="false" onclick="selectShape('triangle')">三角柱體</button>
+        <button type="button" class="seg-btn" data-shape="trapezoid" aria-pressed="false" onclick="selectShape('trapezoid')">梯形柱體</button>
       </div>
     </nav>
 
-    <!-- Main Interactive Workspace -->
-    <main class="workspace-grid">
-      <!-- Left Column: 3D Visualizer, Net Unfold, Dimension Sliders -->
-      <div class="col-stack">
-        <!-- 3D Visualizer -->
-        <section class="tile stage-tile" aria-label="3D 立體模型視窗">
-          <div class="stage-canvas-wrap" id="stage-wrap">
-            <div class="stage-labels-layer" id="labels-layer"></div>
-            <div class="stage-fallback" id="stage-fallback">
-              <div>
-                <strong>無法載入 WebGL 3D 渲染器</strong>
-                <p>請確保瀏覽器支援 WebGL，或使用右側計算機查看展開與表面面積數據。</p>
+    <!-- Main Workbench -->
+    <section class="workbench" aria-label="互動 3D 模擬與面積計算">
+      <!-- Left: 3D Stage & Unfold Controls -->
+      <div class="tile viewer-tile">
+        <div class="viewer-header">
+          <div class="legend-group">
+            <span class="legend-pill is-red"><span class="swatch-dot red"></span>底面（2 個）</span>
+            <span class="legend-pill is-blue"><span class="swatch-dot blue"></span>側面（側面積）</span>
+          </div>
+          <div class="view-actions">
+            <button type="button" class="icon-pill-btn" id="btn-toggle-labels" aria-pressed="true" onclick="toggleLabels()">尺寸標籤</button>
+            <button type="button" class="icon-pill-btn" onclick="setTopDownView()">俯視展開圖</button>
+            <button type="button" class="icon-pill-btn" onclick="resetCameraView()">重置 3D 視角</button>
+          </div>
+        </div>
+
+        <div class="canvas-stage" id="canvas-stage">
+          <div class="labels-overlay" id="labels-overlay" aria-hidden="true"></div>
+          <div class="stage-hint">左鍵／單指拖曳旋轉 · 滾輪／雙指縮放</div>
+          <div class="zoom-floating">
+            <button type="button" class="zoom-circle-btn" aria-label="放大 3D 模型" onclick="adjustZoom(0.85)">+</button>
+            <button type="button" class="zoom-circle-btn" aria-label="縮小 3D 模型" onclick="adjustZoom(1.18)">−</button>
+          </div>
+        </div>
+
+        <!-- Net Unfolding Dock -->
+        <div class="unfold-dock">
+          <div class="mode-switch-row">
+            <span class="dock-label">展開圖展示模式</span>
+            <div class="mode-track" role="group" aria-label="展開圖模式切換">
+              <button type="button" class="mode-btn" id="mode-strip-btn" aria-pressed="true" onclick="setUnfoldMode('strip')">側面連排展開 (Connected Strip)</button>
+              <button type="button" class="mode-btn" id="mode-sep-btn" aria-pressed="false" onclick="setUnfoldMode('separated')">側面獨立分開拆解 (Separated Faces)</button>
+            </div>
+          </div>
+
+          <div class="slider-action-row">
+            <button type="button" class="btn-primary" id="btn-play-unfold" onclick="toggleUnfoldAnimation()">展開動畫</button>
+            <div class="slider-wrap">
+              <div class="slider-meta">
+                <label for="unfold-slider">展開進度 (Net Unfolding)</label>
+                <span class="slider-pct" id="unfold-pct">0%</span>
               </div>
+              <input type="range" id="unfold-slider" min="0" max="100" step="1" value="0" oninput="onUnfoldSliderInput(this.value)">
             </div>
           </div>
 
-          <div class="stage-hud-top">
-            <div class="hud-group">
-              <div class="legend-pill" id="color-legend">
-                <span class="swatch base" aria-hidden="true"></span><span>底面 (紅色)</span>
-                <span class="swatch lateral" aria-hidden="true"></span><span>側面 (藍色)</span>
-              </div>
-            </div>
-            <div class="hud-group">
-              <button type="button" class="hud-btn is-on" id="btn-color-toggle" onclick="toggleColorCoding()">底紅側藍：開</button>
-              <button type="button" class="hud-btn is-on" id="btn-labels-toggle" onclick="toggleDimLabels()">標註：開</button>
-              <button type="button" class="hud-btn" id="btn-autorotate" onclick="toggleAutoRotate()">自動旋轉</button>
-              <button type="button" class="hud-btn" id="btn-topview" onclick="toggleTopView()">俯視平面</button>
-              <button type="button" class="hud-btn icon-only" aria-label="放大模型" onclick="zoomCamera(-1)">+</button>
-              <button type="button" class="hud-btn icon-only" aria-label="縮小模型" onclick="zoomCamera(1)">−</button>
-              <button type="button" class="hud-btn" onclick="resetCamera()">重設視角</button>
+          <div class="snap-row">
+            <span class="dock-label">快速狀態</span>
+            <div class="snap-pills">
+              <button type="button" class="chip-btn" onclick="animateToUnfold(0)">3D 立體 (0%)</button>
+              <button type="button" class="chip-btn" onclick="animateToUnfold(50)">半展開 (50%)</button>
+              <button type="button" class="chip-btn" onclick="animateToUnfold(100)">完全展開 (100%)</button>
             </div>
           </div>
 
-          <div class="stage-hud-bottom">
-            <span class="stage-hint">左鍵或單指拖曳旋轉 · 滾輪或雙指縮放</span>
-            <span class="stage-hint" id="shape-badge-bottom">平行四邊形柱體</span>
-          </div>
-        </section>
-
-        <!-- 3D Net Unfolding Control -->
-        <section class="tile" aria-label="3D 展開圖動畫控制">
-          <div class="unfold-row">
-            <div>
-              <h2 class="tile-title">3D 展開圖動畫 (Net Unfolding)</h2>
-              <span class="tile-subtitle">將立體圖形沿摺線逐步分解為 2D 平面展開圖</span>
-            </div>
-            <span class="unfold-status" id="unfold-percent-badge">0% · 立體摺合</span>
-          </div>
-
-          <div class="unfold-controls">
-            <button type="button" class="btn-primary" id="btn-play-unfold" onclick="toggleUnfoldPlayback()">▶ 自動展開</button>
-            <div>
-              <label for="slider-unfold" class="dim-hint" style="display:block;margin-bottom:4px;">拖動展開進度 (0% 立體 → 100% 展開圖)</label>
-              <input type="range" id="slider-unfold" min="0" max="100" step="0.5" value="0" oninput="onUnfoldSlider(this.value)">
-            </div>
-            <button type="button" class="btn-secondary" onclick="setUnfoldTarget(0)">重設摺合</button>
-          </div>
-
-          <div class="quick-snap-row">
-            <span class="presets-label">快速狀態：</span>
-            <button type="button" class="btn-secondary is-active" id="snap-0" onclick="animateUnfoldTo(0)">0% 完全摺合</button>
-            <button type="button" class="btn-secondary" id="snap-50" onclick="animateUnfoldTo(50)">50% 半展開</button>
-            <button type="button" class="btn-secondary" id="snap-100" onclick="animateUnfoldTo(100)">100% 平面展開圖</button>
-          </div>
-        </section>
-
-        <!-- Interactive Dimension Sliders -->
-        <section class="tile" aria-label="尺寸參數控制">
-          <div class="tile-header">
-            <div>
-              <h2 class="tile-title">尺寸參數調整 (cm)</h2>
-              <span class="tile-subtitle">即時修改邊長或高，觀察 3D 模型與表面積變化</span>
-            </div>
-            <div id="pi-mode-container" style="display:none;">
-              <div class="pi-toggle-group" role="group" aria-label="圓周率顯示方式">
-                <button type="button" class="pi-btn is-active" id="pi-btn-exact" onclick="setPiMode('pi')">以 π 表示 + 數值</button>
-                <button type="button" class="pi-btn" id="pi-btn-314" onclick="setPiMode('3.14')">取 π ≈ 3.14</button>
-              </div>
-            </div>
-          </div>
-
-          <div class="dims-grid" id="dims-grid"></div>
-          <div class="derived-note" id="derived-note" style="display:none;"></div>
-          <div class="presets-row" id="presets-row"></div>
-        </section>
+          <p class="mode-explainer" id="mode-explainer"></p>
+        </div>
       </div>
 
-      <!-- Right Column: Live Total Surface Area Calculator -->
-      <div class="col-stack">
-        <!-- Headline Result -->
-        <section class="tile figure" aria-label="總表面面積即時結果">
-          <div class="figure-label">總表面面積 (Total Surface Area)</div>
-          <div class="figure-value-row">
-            <span class="figure-value" id="total-area-value">0.00</span>
-            <span class="figure-unit" id="total-area-unit">cm²</span>
-          </div>
-          <div class="figure-alt" id="total-area-pi" style="display:none;"></div>
-
-          <div class="ratio-bar-wrap">
-            <div class="ratio-bar" role="img" aria-label="底面積與側面積佔比條">
-              <div class="ratio-seg-base" id="ratio-bar-base" style="width: 30%;"></div>
-              <div class="ratio-seg-lateral" id="ratio-bar-lateral" style="width: 70%;"></div>
-            </div>
+      <!-- Right: TSA Step-by-Step Calculator & Dimension Sliders -->
+      <div class="side-stack">
+        <!-- TSA Live Calculator -->
+        <div class="tile calc-tile">
+          <div class="tile-head">
+            <h2>即時總表面面積計算器</h2>
+            <button type="button" class="icon-pill-btn" id="btn-quiz-mask" aria-pressed="false" onclick="toggleQuizMask()">課堂遮罩</button>
           </div>
 
-          <div class="split-cards">
-            <div class="split-card base-card">
-              <div class="split-card-label">
-                <span>兩個底面總面積</span>
-                <span id="base-share-pct">0%</span>
+          <div class="tsa-hero" id="tsa-hero-box">
+            <div class="tsa-hero-label">總表面面積 (TSA = 2 × 底面積 + 側面總面積)</div>
+            <div class="tsa-hero-value"><span id="val-tsa">148.0</span><span class="tsa-hero-unit">cm²</span></div>
+            <div class="tsa-formula-chip" id="tsa-summary-formula">2 × 24.0 + 100.0 = 148.0 cm²</div>
+          </div>
+
+          <div class="steps-list">
+            <div class="step-card is-red-card" onmouseenter="setFaceHighlight('base')" onmouseleave="setFaceHighlight(null)">
+              <div class="step-top">
+                <span class="step-title"><span class="step-badge">1</span>1 個底面積（紅色底面）</span>
+                <span class="step-val" id="val-base-1">24.0 cm²</span>
               </div>
-              <div class="split-card-val" id="base-total-val">0 cm²</div>
-              <div class="split-card-sub" id="base-single-sub">單底面積：0 cm²</div>
+              <div class="step-math" id="math-base-1"></div>
             </div>
-            <div class="split-card lateral-card">
-              <div class="split-card-label">
-                <span>總側面積</span>
-                <span id="lateral-share-pct">0%</span>
+
+            <div class="step-card is-red-card" onmouseenter="setFaceHighlight('base')" onmouseleave="setFaceHighlight(null)">
+              <div class="step-top">
+                <span class="step-title"><span class="step-badge">2</span>2 個底面積（底面積 × 2）</span>
+                <span class="step-val" id="val-base-2">48.0 cm²</span>
               </div>
-              <div class="split-card-val" id="lateral-total-val">0 cm²</div>
-              <div class="split-card-sub" id="lateral-perim-sub">底面周界 × 柱高</div>
+              <div class="step-math" id="math-base-2"></div>
             </div>
-          </div>
-        </section>
 
-        <!-- Individual Face Areas -->
-        <section class="tile" aria-label="各獨立面面積明細">
-          <div class="tile-header">
-            <div>
-              <h2 class="tile-title">各面面積明細</h2>
-              <span class="tile-subtitle">對應 3D 模型及展開圖中的每一個獨立面</span>
+            <div class="step-card is-blue-card" onmouseenter="setFaceHighlight('lateral')" onmouseleave="setFaceHighlight(null)">
+              <div class="step-top">
+                <span class="step-title"><span class="step-badge">3</span>側面總面積（藍色側面）</span>
+                <span class="step-val" id="val-lateral">100.0 cm²</span>
+              </div>
+              <div class="step-math" id="math-lateral"></div>
             </div>
-          </div>
-          <div class="faces-list" id="faces-list"></div>
-        </section>
 
-        <!-- Step-by-Step Formula & HK Curriculum Tip -->
-        <section class="tile" aria-label="分步算式與解題公式">
-          <div class="tile-header">
-            <div>
-              <h2 class="tile-title">分步計算算式 (Step-by-Step)</h2>
-              <span class="tile-subtitle">中一柱體總表面面積標準列式</span>
+            <div class="step-card" onmouseenter="setFaceHighlight('all')" onmouseleave="setFaceHighlight(null)">
+              <div class="step-top">
+                <span class="step-title"><span class="step-badge">4</span>總表面面積 (TSA)</span>
+                <span class="step-val" id="val-tsa-step">148.0 cm²</span>
+              </div>
+              <div class="step-math" id="math-tsa-step"></div>
             </div>
           </div>
-          <div class="steps-list" id="steps-list"></div>
-          <div class="concept-tip" id="concept-tip"></div>
-        </section>
+        </div>
+
+        <!-- Dynamic Dimension Sliders -->
+        <div class="tile dims-tile">
+          <div class="tile-head">
+            <h2>尺寸設定（單位：cm）</h2>
+            <button type="button" class="chip-btn" onclick="resetCurrentDimensions()">重設預設尺寸</button>
+          </div>
+          <div class="sub-preset-row" id="sub-preset-row"></div>
+          <div class="dim-controls-list" id="dim-controls-list"></div>
+          <p class="constraint-note" id="constraint-note" aria-live="polite"></p>
+        </div>
       </div>
-    </main>
-  </div>
+    </section>
+
+    <!-- Teaching Notes & Reference Table -->
+    <section class="concepts-grid" aria-label="展開圖學習重點">
+      <article class="tile concept-card">
+        <h3>為什麼要學「側面連排展開」？</h3>
+        <p>把柱體的所有藍色側面沿著同一方向連排攤平後，會合併成一個「大長方形」：它的寬度剛好等於<strong>底面周界</strong>，高度等於<strong>柱高</strong>。因此無論底面是三角形、平行四邊形還是梯形，<strong>側面總面積 = 底面周界 × 高</strong> 永遠成立。</p>
+      </article>
+      <article class="tile concept-card">
+        <h3>什麼時候用「側面獨立分開拆解」？</h3>
+        <p>將側面逐塊獨立拆開，能清楚檢查每一面長方形的長與闊，避免在計算不規則底面（如不等邊三角形或直角梯形）時漏掉其中一塊側面，或誤將斜邊與底高混淆。</p>
+      </article>
+    </section>
+
+    <section class="tile" aria-label="常見柱體總表面面積公式對照表">
+      <div class="tile-head" style="margin-bottom: var(--space-sm);">
+        <h2>柱體表面面積公式速查表</h2>
+      </div>
+      <div class="formula-table-wrap">
+        <table class="ref-table">
+          <thead>
+            <tr>
+              <th>柱體形狀</th>
+              <th>1 個底面積（紅色）</th>
+              <th>底面周界</th>
+              <th>側面總面積（藍色）</th>
+              <th>總表面面積 (TSA)</th>
+            </tr>
+          </thead>
+          <tbody id="ref-table-body">
+            <tr data-shape-row="cuboid">
+              <td>長方體</td>
+              <td>長 × 闊</td>
+              <td>2 × (長 + 闊)</td>
+              <td>2 × (長 + 闊) × 高</td>
+              <td>2(長×闊) + 2(長+闊)×高</td>
+            </tr>
+            <tr data-shape-row="cube">
+              <td>正方體</td>
+              <td>邊長²</td>
+              <td>4 × 邊長</td>
+              <td>4 × 邊長²</td>
+              <td>6 × 邊長²</td>
+            </tr>
+            <tr data-shape-row="parallelogram">
+              <td>平行四邊形柱體</td>
+              <td>底 × 底高</td>
+              <td>2 × (底 + 斜邊)</td>
+              <td>2 × (底 + 斜邊) × 高</td>
+              <td>2(底×底高) + 2(底+斜邊)×高</td>
+            </tr>
+            <tr data-shape-row="triangle">
+              <td>三角柱體</td>
+              <td>(底 × 底高) ÷ 2</td>
+              <td>邊 1 + 邊 2 + 邊 3</td>
+              <td>(三邊總和) × 高</td>
+              <td>2 × 底面積 + 底周界 × 高</td>
+            </tr>
+            <tr data-shape-row="trapezoid">
+              <td>梯形柱體</td>
+              <td>(上底 + 下底) × 底高 ÷ 2</td>
+              <td>上底 + 下底 + 兩腰</td>
+              <td>(四邊總和) × 高</td>
+              <td>2 × 底面積 + 底周界 × 高</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <footer class="footer-note">
+      單一獨立 HTML 教學網頁 · 支援離線課堂投影及直接更名為 index.html 部署至 GitHub Pages
+    </footer>
+  </main>
 
   <api-shim></api-shim>
-
   <script>
     /* ============================================================
-       1. Curriculum Data, Shape Specifications & State
+       1. State & Default Dimensions
        ============================================================ */
-    const SHAPE_META = {
-      parallelogram: {
-        name: `平行四邊形柱體`,
-        baseType: `平行四邊形`,
-        tip: `計算平行四邊形底面積時，必須使用「底 × 垂直高」（b × h），切勿誤用斜邊長（s）；而計算側面積時，底面周界則等於四條邊長之和 2 × (b + s)。`,
-        defaultDims: { b: 8, hp: 4, s: 5, H: 10 },
-        sliders: [
-          { key: `b`, label: `底邊長 (b)`, hint: `平行四邊形的底`, min: 2, max: 14, step: 0.5 },
-          { key: `hp`, label: `底面垂直高 (h)`, hint: `底邊之間的垂直距離`, min: 1.5, max: 10, step: 0.5 },
-          { key: `s`, label: `底面斜邊長 (s)`, hint: `須大於或等於垂直高 h`, min: 1.5, max: 14, step: 0.5 },
-          { key: `H`, label: `柱體的高 (H)`, hint: `上下兩個平行四邊形底之間的距離`, min: 2, max: 16, step: 0.5 }
-        ],
-        presets: [
-          { label: `經典例題 (8, 高4, 斜5, 柱高10)`, dims: { b: 8, hp: 4, s: 5, H: 10 } },
-          { label: `直立矩形特殊情況 (斜邊=垂直高)`, dims: { b: 6, hp: 4, s: 4, H: 8 } },
-          { label: `較扁寬斜柱體 (10, 高3, 斜5, 柱高6)`, dims: { b: 10, hp: 3, s: 5, H: 6 } }
-        ]
-      },
-      cuboid: {
-        name: `長方體`,
-        baseType: `長方形`,
-        tip: `長方體可視為底面為長方形的直立柱體：2(長×闊) 為上下紅底，2(長+闊)×高 為四塊藍色側面，展開後合共為 2(lw + lh + wh)。`,
-        defaultDims: { L: 8, W: 5, H: 6 },
-        sliders: [
-          { key: `L`, label: `長度 (l)`, hint: `底面長方形的長`, min: 2, max: 14, step: 0.5 },
-          { key: `W`, label: `闊度 (w)`, hint: `底面長方形的闊`, min: 2, max: 12, step: 0.5 },
-          { key: `H`, label: `高度 (h)`, hint: `長方體（柱體）的高`, min: 2, max: 14, step: 0.5 }
-        ],
-        presets: [
-          { label: `標準長方體 (8 × 5 × 6)`, dims: { L: 8, W: 5, H: 6 } },
-          { label: `扁平禮物盒 (10 × 8 × 3)`, dims: { L: 10, W: 8, H: 3 } },
-          { label: `高身紙盒 (4 × 4 × 11)`, dims: { L: 4, W: 4, H: 11 } }
-        ]
-      },
-      cube: {
-        name: `正方體`,
-        baseType: `正方形`,
-        tip: `正方體由 6 個全等的正方形組成（2 個紅色底面 + 4 個藍色側面），每面面積均為 a²，因此總表面面積可直接簡化為 6a²。`,
-        defaultDims: { a: 6 },
-        sliders: [
-          { key: `a`, label: `邊長 (a)`, hint: `所有稜邊均相等`, min: 2, max: 12, step: 0.5 }
-        ],
-        presets: [
-          { label: `邊長 5 cm`, dims: { a: 5 } },
-          { label: `邊長 6 cm`, dims: { a: 6 } },
-          { label: `邊長 10 cm`, dims: { a: 10 } }
-        ]
-      },
-      triangular: {
-        name: `三角柱體`,
-        baseType: `三角形`,
-        tip: `三角柱體共有 5 個面：2 個全等的三角形底面（紅色），以及 3 個以三角形三條邊為闊、柱體高 H 為長的長方形側面（藍色）。`,
-        defaultDims: { b: 6, ht: 4, d: 3, H: 9 },
-        sliders: [
-          { key: `b`, label: `三角形底邊 (b)`, hint: `底部邊長 s₁`, min: 2, max: 14, step: 0.5 },
-          { key: `ht`, label: `三角形的高 (h)`, hint: `底邊至頂點的垂直高`, min: 2, max: 12, step: 0.5 },
-          { key: `d`, label: `頂點水平偏移 (d)`, hint: `0 = 直角三角形；b/2 = 等腰三角形`, min: 0, max: 14, step: 0.5 },
-          { key: `H`, label: `柱體的高 (H)`, hint: `兩塊三角形底之間的距離`, min: 2, max: 15, step: 0.5 }
-        ],
-        presets: [
-          { label: `等腰三角柱體 (底6, 高4 → 兩腰5)`, dims: { b: 6, ht: 4, d: 3, H: 9 } },
-          { label: `直角三角柱體 (3-4-5 畢氏三元數)`, dims: { b: 4, ht: 3, d: 0, H: 10 } },
-          { label: `直角三角柱體 (6-8-10)`, dims: { b: 8, ht: 6, d: 0, H: 12 } }
-        ]
-      },
-      cylinder: {
-        name: `圓柱體`,
-        baseType: `圓形`,
-        tip: `當圓柱體的曲面側面完全展開後，會變成一個「長方形」：它的長度正好等於底圓的圓周 2πr，闊度就是圓柱體的高 H！`,
-        defaultDims: { r: 4, H: 8 },
-        sliders: [
-          { key: `r`, label: `底圓半徑 (r)`, hint: `圓心至圓周的距離（直徑 = 2r）`, min: 1.5, max: 8, step: 0.5 },
-          { key: `H`, label: `柱體的高 (H)`, hint: `上下兩個圓形底之間的距離`, min: 2, max: 15, step: 0.5 }
-        ],
-        presets: [
-          { label: `飲料罐尺寸 (r=3, H=11)`, dims: { r: 3, H: 11 } },
-          { label: `標準圓柱 (r=4, H=8)`, dims: { r: 4, H: 8 } },
-          { label: `矮闊圓餅盒 (r=6, H=4)`, dims: { r: 6, H: 4 } }
-        ]
-      }
+    const DEFAULT_DIMS = {
+      cuboid: { length: 6, width: 4, height: 5 },
+      cube: { side: 5 },
+      parallelogram: { base: 6, slant: 5, baseHeight: 4, height: 8 },
+      triangle: { base: 6, baseHeight: 4, apexOffset: 3, height: 8, triType: 'isosceles' },
+      trapezoid: { topBase: 4, bottomBase: 10, baseHeight: 4, height: 7, trapType: 'isosceles' }
+    };
+
+    const SHAPE_NAMES = {
+      cuboid: `長方體`,
+      cube: `正方體`,
+      parallelogram: `平行四邊形柱體`,
+      triangle: `三角柱體`,
+      trapezoid: `梯形柱體`
     };
 
     const appState = {
-      shape: `parallelogram`,
-      dims: {
-        parallelogram: { ...SHAPE_META.parallelogram.defaultDims },
-        cuboid: { ...SHAPE_META.cuboid.defaultDims },
-        cube: { ...SHAPE_META.cube.defaultDims },
-        triangular: { ...SHAPE_META.triangular.defaultDims },
-        cylinder: { ...SHAPE_META.cylinder.defaultDims }
-      },
-      unfold: 0,
-      targetUnfold: 0,
-      isPlayingUnfold: false,
-      unfoldDirection: 1,
-      colorCoded: true,
+      shape: 'cuboid',
+      unfoldMode: 'strip',
+      unfoldPct: 0,
       showLabels: true,
-      autoRotate: false,
-      isTopView: false,
-      piMode: `pi`
+      quizMasked: false,
+      dims: JSON.parse(JSON.stringify(DEFAULT_DIMS))
+    };
+
+    let animPlaying = false;
+    let animTargetPct = null;
+    let animDirection = 1;
+    let faceHighlightMode = null;
+
+    /* ============================================================
+       2. Color Tokens Read From :root
+       ============================================================ */
+    function readCssToken(name, fallback) {
+      const val = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+      return val || fallback;
+    }
+
+    const THEME_COLORS = {
+      baseRed: readCssToken('--base-red', '#d70015'),
+      lateralBlue: readCssToken('--lateral-blue', '#006bd6'),
+      stageBg: readCssToken('--background', '#fbfbfd'),
+      stageGrid: readCssToken('--stage-grid', '#d2d2d7'),
+      edgeInk: readCssToken('--edge-ink', '#1d1d1f'),
+      highlightGold: readCssToken('--secondary', '#bf4800')
     };
 
     /* ============================================================
-       2. Number Formatting & Surface Area Math Engine
+       3. Three.js Scene & Custom Orbit Camera
        ============================================================ */
-    function fmt(n) {
-      if (Math.abs(n) < 1e-9) return `0`;
-      const rounded = Math.round(n * 100) / 100;
-      if (Number.isInteger(rounded)) return String(rounded);
-      return rounded.toFixed(2).replace(/\.?0+$/, ``);
-    }
+    const stageEl = document.getElementById('canvas-stage');
+    const labelsOverlayEl = document.getElementById('labels-overlay');
 
-    function fmtFixed(n) {
-      return (Math.round(n * 100) / 100).toFixed(2);
-    }
-
-    function computeGeometryReport() {
-      const s = appState.shape;
-      const d = appState.dims[s];
-
-      if (s === `parallelogram`) {
-        const b = d.b;
-        const hp = d.hp;
-        const slant = Math.max(d.s, hp);
-        const H = d.H;
-        const skew = Math.sqrt(Math.max(0, slant * slant - hp * hp));
-
-        const singleBase = b * hp;
-        const totalBase = 2 * singleBase;
-        const perim = 2 * (b + slant);
-        const frontBackArea = b * H;
-        const sideWallArea = slant * H;
-        const totalLateral = perim * H;
-        const totalSurface = totalBase + totalLateral;
-
-        return {
-          totalSurface,
-          totalBase,
-          singleBase,
-          totalLateral,
-          piExprTotal: null,
-          derivedHtml: `平行四邊形底周界 = <strong>${fmt(perim)} cm</strong> · 水平傾斜偏移 = <strong>${fmt(skew)} cm</strong>`,
-          faces: [
-            { kind: `base`, name: `上底面（平行四邊形）`, calc: `${fmt(b)} × ${fmt(hp)}`, area: `${fmt(singleBase)} cm²` },
-            { kind: `base`, name: `下底面（平行四邊形）`, calc: `${fmt(b)} × ${fmt(hp)}`, area: `${fmt(singleBase)} cm²` },
-            { kind: `lateral`, name: `前面側面（長方形）`, calc: `${fmt(b)} × ${fmt(H)}`, area: `${fmt(frontBackArea)} cm²` },
-            { kind: `lateral`, name: `後面側面（長方形）`, calc: `${fmt(b)} × ${fmt(H)}`, area: `${fmt(frontBackArea)} cm²` },
-            { kind: `lateral`, name: `左斜側面（長方形）`, calc: `${fmt(slant)} × ${fmt(H)}`, area: `${fmt(sideWallArea)} cm²` },
-            { kind: `lateral`, name: `右斜側面（長方形）`, calc: `${fmt(slant)} × ${fmt(H)}`, area: `${fmt(sideWallArea)} cm²` }
-          ],
-          steps: [
-            {
-              badge: `base`,
-              badgeText: `步驟 1`,
-              title: `求平行四邊形底面積`,
-              formula: `底面積 = 底 (b) × 垂直高 (h)`,
-              work: `= ${fmt(b)} × ${fmt(hp)} = <span class="ans-base">${fmt(singleBase)} cm²</span><br>兩個底面面積 = 2 × ${fmt(singleBase)} = <span class="ans-base">${fmt(totalBase)} cm²</span>`
-            },
-            {
-              badge: `lateral`,
-              badgeText: `步驟 2`,
-              title: `求底面周界及總側面積`,
-              formula: `側面積 = 底面周界 × 柱體的高 = 2(b + s) × H`,
-              work: `底面周界 = 2 × (${fmt(b)} + ${fmt(slant)}) = ${fmt(perim)} cm<br>總側面積 = ${fmt(perim)} × ${fmt(H)} = <span class="ans">${fmt(totalLateral)} cm²</span>`
-            },
-            {
-              badge: `total`,
-              badgeText: `步驟 3`,
-              title: `求總表面面積`,
-              formula: `總表面面積 = 2 × 底面積 + 總側面積`,
-              work: `= ${fmt(totalBase)} + ${fmt(totalLateral)} = <span class="ans">${fmtFixed(totalSurface)} cm²</span>`
-            }
-          ]
-        };
-      }
-
-      if (s === `cuboid`) {
-        const { L, W, H } = d;
-        const singleBase = L * W;
-        const totalBase = 2 * singleBase;
-        const perim = 2 * (L + W);
-        const frontBack = L * H;
-        const leftRight = W * H;
-        const totalLateral = perim * H;
-        const totalSurface = totalBase + totalLateral;
-
-        return {
-          totalSurface,
-          totalBase,
-          singleBase,
-          totalLateral,
-          piExprTotal: null,
-          derivedHtml: `底面周界 = <strong>${fmt(perim)} cm</strong> · 體積參考 = <strong>${fmt(L * W * H)} cm³</strong>`,
-          faces: [
-            { kind: `base`, name: `上底面（長方形）`, calc: `${fmt(L)} × ${fmt(W)}`, area: `${fmt(singleBase)} cm²` },
-            { kind: `base`, name: `下底面（長方形）`, calc: `${fmt(L)} × ${fmt(W)}`, area: `${fmt(singleBase)} cm²` },
-            { kind: `lateral`, name: `前面側面（長方形）`, calc: `${fmt(L)} × ${fmt(H)}`, area: `${fmt(frontBack)} cm²` },
-            { kind: `lateral`, name: `後面側面（長方形）`, calc: `${fmt(L)} × ${fmt(H)}`, area: `${fmt(frontBack)} cm²` },
-            { kind: `lateral`, name: `左面側面（長方形）`, calc: `${fmt(W)} × ${fmt(H)}`, area: `${fmt(leftRight)} cm²` },
-            { kind: `lateral`, name: `右面側面（長方形）`, calc: `${fmt(W)} × ${fmt(H)}`, area: `${fmt(leftRight)} cm²` }
-          ],
-          steps: [
-            {
-              badge: `base`,
-              badgeText: `步驟 1`,
-              title: `求上下兩個長方形底面積`,
-              formula: `底面積 = 長 (l) × 闊 (w)`,
-              work: `單底面積 = ${fmt(L)} × ${fmt(W)} = <span class="ans-base">${fmt(singleBase)} cm²</span><br>兩個底面面積 = 2 × ${fmt(singleBase)} = <span class="ans-base">${fmt(totalBase)} cm²</span>`
-            },
-            {
-              badge: `lateral`,
-              badgeText: `步驟 2`,
-              title: `求四個長方形側面積`,
-              formula: `側面積 = 底面周界 × 高 = 2(l + w) × h`,
-              work: `底面周界 = 2 × (${fmt(L)} + ${fmt(W)}) = ${fmt(perim)} cm<br>總側面積 = ${fmt(perim)} × ${fmt(H)} = <span class="ans">${fmt(totalLateral)} cm²</span>`
-            },
-            {
-              badge: `total`,
-              badgeText: `步驟 3`,
-              title: `求長方體總表面面積`,
-              formula: `總表面面積 = 2(lw) + 2(lh + wh)`,
-              work: `= ${fmt(totalBase)} + ${fmt(totalLateral)} = <span class="ans">${fmtFixed(totalSurface)} cm²</span>`
-            }
-          ]
-        };
-      }
-
-      if (s === `cube`) {
-        const a = d.a;
-        const singleFace = a * a;
-        const totalBase = 2 * singleFace;
-        const totalLateral = 4 * singleFace;
-        const totalSurface = 6 * singleFace;
-
-        return {
-          totalSurface,
-          totalBase,
-          singleBase: singleFace,
-          totalLateral,
-          piExprTotal: null,
-          derivedHtml: `底面周界 = <strong>${fmt(4 * a)} cm</strong> · 6 個全等正方形（每面 <strong>${fmt(singleFace)} cm²</strong>）`,
-          faces: [
-            { kind: `base`, name: `上底面（正方形）`, calc: `${fmt(a)} × ${fmt(a)}`, area: `${fmt(singleFace)} cm²` },
-            { kind: `base`, name: `下底面（正方形）`, calc: `${fmt(a)} × ${fmt(a)}`, area: `${fmt(singleFace)} cm²` },
-            { kind: `lateral`, name: `前面側面（正方形）`, calc: `${fmt(a)} × ${fmt(a)}`, area: `${fmt(singleFace)} cm²` },
-            { kind: `lateral`, name: `後面側面（正方形）`, calc: `${fmt(a)} × ${fmt(a)}`, area: `${fmt(singleFace)} cm²` },
-            { kind: `lateral`, name: `左面側面（正方形）`, calc: `${fmt(a)} × ${fmt(a)}`, area: `${fmt(singleFace)} cm²` },
-            { kind: `lateral`, name: `右面側面（正方形）`, calc: `${fmt(a)} × ${fmt(a)}`, area: `${fmt(singleFace)} cm²` }
-          ],
-          steps: [
-            {
-              badge: `base`,
-              badgeText: `步驟 1`,
-              title: `求上下兩個正方形底面積`,
-              formula: `底面積 = 邊長² = a²`,
-              work: `單底面積 = ${fmt(a)}² = <span class="ans-base">${fmt(singleFace)} cm²</span><br>兩個底面面積 = 2 × ${fmt(singleFace)} = <span class="ans-base">${fmt(totalBase)} cm²</span>`
-            },
-            {
-              badge: `lateral`,
-              badgeText: `步驟 2`,
-              title: `求四個側面正方形總面積`,
-              formula: `總側面積 = 4 × a² = 底面周界 (4a) × a`,
-              work: `總側面積 = 4 × ${fmt(singleFace)} = <span class="ans">${fmt(totalLateral)} cm²</span>`
-            },
-            {
-              badge: `total`,
-              badgeText: `步驟 3`,
-              title: `求正方體總表面面積`,
-              formula: `總表面面積 = 2a² + 4a² = 6a²`,
-              work: `= ${fmt(totalBase)} + ${fmt(totalLateral)} = 6 × ${fmt(singleFace)} = <span class="ans">${fmtFixed(totalSurface)} cm²</span>`
-            }
-          ]
-        };
-      }
-
-      if (s === `triangular`) {
-        const b = d.b;
-        const ht = d.ht;
-        const clampedD = Math.min(Math.max(0, d.d), b);
-        const H = d.H;
-
-        const s1 = b;
-        const s2 = Math.hypot(clampedD, ht);
-        const s3 = Math.hypot(b - clampedD, ht);
-
-        const singleBase = 0.5 * b * ht;
-        const totalBase = 2 * singleBase;
-        const perim = s1 + s2 + s3;
-        const area1 = s1 * H;
-        const area2 = s2 * H;
-        const area3 = s3 * H;
-        const totalLateral = perim * H;
-        const totalSurface = totalBase + totalLateral;
-
-        let triType = `一般三角形`;
-        if (Math.abs(clampedD) < 0.01 || Math.abs(clampedD - b) < 0.01) triType = `直角三角形`;
-        else if (Math.abs(clampedD - b / 2) < 0.01) triType = `等腰三角形`;
-
-        return {
-          totalSurface,
-          totalBase,
-          singleBase,
-          totalLateral,
-          piExprTotal: null,
-          derivedHtml: `三角形種類：<strong>${triType}</strong> · 三邊長 s₁=<strong>${fmt(s1)}</strong>, s₂=<strong>${fmt(s2)}</strong>, s₃=<strong>${fmt(s3)} cm</strong> · 周界=<strong>${fmt(perim)} cm</strong>`,
-          faces: [
-            { kind: `base`, name: `上底面（三角形）`, calc: `½ × ${fmt(b)} × ${fmt(ht)}`, area: `${fmt(singleBase)} cm²` },
-            { kind: `base`, name: `下底面（三角形）`, calc: `½ × ${fmt(b)} × ${fmt(ht)}`, area: `${fmt(singleBase)} cm²` },
-            { kind: `lateral`, name: `側面 1（底邊長方形）`, calc: `${fmt(s1)} × ${fmt(H)}`, area: `${fmt(area1)} cm²` },
-            { kind: `lateral`, name: `側面 2（左斜長方形）`, calc: `${fmt(s2)} × ${fmt(H)}`, area: `${fmt(area2)} cm²` },
-            { kind: `lateral`, name: `側面 3（右斜長方形）`, calc: `${fmt(s3)} × ${fmt(H)}`, area: `${fmt(area3)} cm²` }
-          ],
-          steps: [
-            {
-              badge: `base`,
-              badgeText: `步驟 1`,
-              title: `求三角形底面積`,
-              formula: `底面積 = ½ × 底 (b) × 高 (h)`,
-              work: `單底面積 = ½ × ${fmt(b)} × ${fmt(ht)} = <span class="ans-base">${fmt(singleBase)} cm²</span><br>兩個底面面積 = 2 × ${fmt(singleBase)} = <span class="ans-base">${fmt(totalBase)} cm²</span>`
-            },
-            {
-              badge: `lateral`,
-              badgeText: `步驟 2`,
-              title: `求底面周界及三個長方形側面積`,
-              formula: `側面積 = (s₁ + s₂ + s₃) × 柱體的高 (H)`,
-              work: `底面周界 = ${fmt(s1)} + ${fmt(s2)} + ${fmt(s3)} = ${fmt(perim)} cm<br>總側面積 = ${fmt(perim)} × ${fmt(H)} = <span class="ans">${fmt(totalLateral)} cm²</span>`
-            },
-            {
-              badge: `total`,
-              badgeText: `步驟 3`,
-              title: `求三角柱體總表面面積`,
-              formula: `總表面面積 = 2 × 三角形底面積 + 總側面積`,
-              work: `= ${fmt(totalBase)} + ${fmt(totalLateral)} = <span class="ans">${fmtFixed(totalSurface)} cm²</span>`
-            }
-          ]
-        };
-      }
-
-      // Cylinder
-      const r = d.r;
-      const H = d.H;
-      const piVal = appState.piMode === `3.14` ? 3.14 : Math.PI;
-      const piTag = appState.piMode === `3.14` ? `3.14` : `π`;
-
-      const singleBaseCoeff = r * r;
-      const totalBaseCoeff = 2 * r * r;
-      const circumCoeff = 2 * r;
-      const lateralCoeff = 2 * r * H;
-      const totalCoeff = totalBaseCoeff + lateralCoeff;
-
-      const singleBase = singleBaseCoeff * piVal;
-      const totalBase = totalBaseCoeff * piVal;
-      const circum = circumCoeff * piVal;
-      const totalLateral = lateralCoeff * piVal;
-      const totalSurface = totalBase + totalLateral;
-
-      return {
-        totalSurface,
-        totalBase,
-        singleBase,
-        totalLateral,
-        piExprTotal: appState.piMode === `pi` ? `精確值：${fmt(totalCoeff)}π cm²` : `以 π ≈ 3.14 計算`,
-        derivedHtml: `底圓直徑 = <strong>${fmt(2 * r)} cm</strong> · 底圓周界（展開長方形之長）= <strong>${fmt(circumCoeff)}π ≈ ${fmt(circum)} cm</strong>`,
-        faces: [
-          { kind: `base`, name: `上底面（圓形）`, calc: `${piTag} × ${fmt(r)}²`, area: `${fmt(singleBaseCoeff)}π ≈ ${fmt(singleBase)} cm²` },
-          { kind: `base`, name: `下底面（圓形）`, calc: `${piTag} × ${fmt(r)}²`, area: `${fmt(singleBaseCoeff)}π ≈ ${fmt(singleBase)} cm²` },
-          { kind: `lateral`, name: `曲面側面（展開長方形）`, calc: `2${piTag}(${fmt(r)}) × ${fmt(H)}`, area: `${fmt(lateralCoeff)}π ≈ ${fmt(totalLateral)} cm²` }
-        ],
-        steps: [
-          {
-            badge: `base`,
-            badgeText: `步驟 1`,
-            title: `求上下兩個圓形底面積`,
-            formula: `底面積 = πr²`,
-            work: `單底面積 = ${piTag} × ${fmt(r)}² = ${fmt(singleBaseCoeff)}π ≈ <span class="ans-base">${fmt(singleBase)} cm²</span><br>兩個底面面積 = 2πr² = ${fmt(totalBaseCoeff)}π ≈ <span class="ans-base">${fmt(totalBase)} cm²</span>`
-          },
-          {
-            badge: `lateral`,
-            badgeText: `步驟 2`,
-            title: `求曲面側面積（底圓周界 × 高）`,
-            formula: `曲面面積 = 2πr × H`,
-            work: `底圓周界 = 2 × ${piTag} × ${fmt(r)} = ${fmt(circumCoeff)}π ≈ ${fmt(circum)} cm<br>總側面積 = ${fmt(circumCoeff)}π × ${fmt(H)} = ${fmt(lateralCoeff)}π ≈ <span class="ans">${fmt(totalLateral)} cm²</span>`
-          },
-          {
-            badge: `total`,
-            badgeText: `步驟 3`,
-            title: `求圓柱體總表面面積`,
-            formula: `總表面面積 = 2πr² + 2πrh`,
-            work: `= ${fmt(totalBaseCoeff)}π + ${fmt(lateralCoeff)}π = ${fmt(totalCoeff)}π ≈ <span class="ans">${fmtFixed(totalSurface)} cm²</span>`
-          }
-        ]
-      };
-    }
-
-    /* ============================================================
-       3. Three.js 3D Visualizer & Exact Net Unfolding Engine
-       ============================================================ */
     let scene = null;
     let camera = null;
     let renderer = null;
-    let rootGroup = null;
-    let activeAnchors = [];
+    let prismRoot = null;
+    let gridHelper = null;
     let animFrameId = null;
-    let webglAvailable = false;
 
-    const camState = {
-      theta: 0.72,
-      phi: 1.05,
-      radius: 26,
-      targetTheta: 0.72,
-      targetPhi: 1.05,
-      targetRadius: 26,
-      isDragging: false,
+    let baseMat = null;
+    let lateralMat = null;
+    let edgeMat = null;
+    let heightLineMat = null;
+
+    // Camera spherical orbit coordinates
+    const camOrbit = {
+      theta: 0.68,
+      phi: 0.92,
+      userZoom: 1.0,
+      targetTheta: 0.68,
+      targetPhi: 0.92,
+      targetZoom: 1.0,
+      targetCenter: new THREE.Vector3(0, 0, 0),
+      currentRadius: 16
+    };
+
+    // Active pointer drag state
+    const pointerState = {
+      active: new Map(),
+      lastDist: 0,
       lastX: 0,
-      lastY: 0,
-      pinchDist: 0
+      lastY: 0
     };
 
-    const threePalette = {
-      baseColor: 0xd70015,
-      lateralColor: 0x006bd6,
-      neutralBase: 0xcfd0d8,
-      neutralSide: 0xe2e3ea,
-      edgeColor: 0x1d1d1f
-    };
+    // Stored folding handles updated per unfoldPct
+    let foldController = null;
+    // Dynamic 3D anchor points for HTML dimension badges
+    let labelAnchors = [];
 
-    function readCssHex(varName, fallback) {
-      const val = getComputedStyle(document.documentElement).getPropertyValue(varName).trim();
-      if (!val || !val.startsWith(`#`)) return fallback;
-      return parseInt(val.slice(1), 16);
-    }
+    function initThreeScene() {
+      if (!stageEl || typeof THREE === 'undefined') return;
 
-    function initThree() {
-      const wrap = document.getElementById(`stage-wrap`);
-      const fallback = document.getElementById(`stage-fallback`);
-      if (!wrap) return;
+      const w = Math.max(stageEl.clientWidth, 320);
+      const h = Math.max(stageEl.clientHeight, 340);
 
-      if (typeof THREE === `undefined`) {
-        if (fallback) fallback.style.display = `grid`;
-        return;
-      }
+      scene = new THREE.Scene();
+      scene.background = new THREE.Color(THEME_COLORS.stageBg);
 
-      try {
-        threePalette.baseColor = readCssHex(`--face-base`, 0xd70015);
-        threePalette.lateralColor = readCssHex(`--face-lateral`, 0x006bd6);
-        threePalette.neutralBase = readCssHex(`--model-neutral-base`, 0xcfd0d8);
-        threePalette.neutralSide = readCssHex(`--model-neutral-side`, 0xe2e3ea);
-        threePalette.edgeColor = readCssHex(`--model-edge`, 0x1d1d1f);
-        const bgHex = readCssHex(`--stage-bg`, 0xf0f0f4);
-        const grid1 = readCssHex(`--stage-grid-1`, 0xc8c8cf);
-        const grid2 = readCssHex(`--stage-grid-2`, 0xe2e2e8);
+      camera = new THREE.PerspectiveCamera(42, w / h, 0.1, 200);
 
-        scene = new THREE.Scene();
-        scene.background = new THREE.Color(bgHex);
-
-        const w = wrap.clientWidth || 640;
-        const h = wrap.clientHeight || 460;
-        camera = new THREE.PerspectiveCamera(40, w / h, 0.1, 300);
-
-        renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: `high-performance` });
-        renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
-        renderer.setSize(w, h);
-        wrap.insertBefore(renderer.domElement, wrap.firstChild);
-
-        // Lighting
-        const ambient = new THREE.AmbientLight(0xffffff, 0.78);
-        scene.add(ambient);
-
-        const dirMain = new THREE.DirectionalLight(0xffffff, 0.65);
-        dirMain.position.set(16, 28, 20);
-        scene.add(dirMain);
-
-        const dirFill = new THREE.DirectionalLight(0xffffff, 0.25);
-        dirFill.position.set(-18, -12, -14);
-        scene.add(dirFill);
-
-        // Subtle reference grid slightly below y=0 (or below resting floor)
-        const grid = new THREE.GridHelper(90, 45, grid1, grid2);
-        grid.position.y = -0.04;
-        grid.name = `floorGrid`;
-        scene.add(grid);
-
-        rootGroup = new THREE.Group();
-        scene.add(rootGroup);
-
-        bindPointerControls(wrap);
-        if (typeof ResizeObserver !== `undefined`) {
-          const ro = new ResizeObserver(function () { resizeRenderer(); });
-          ro.observe(wrap);
-        } else {
-          window.addEventListener(`resize`, resizeRenderer);
-        }
-
-        webglAvailable = true;
-      } catch (err) {
-        webglAvailable = false;
-        if (fallback) fallback.style.display = `grid`;
-      }
-    }
-
-    function resizeRenderer() {
-      const wrap = document.getElementById(`stage-wrap`);
-      if (!wrap || !renderer || !camera) return;
-      const w = wrap.clientWidth;
-      const h = wrap.clientHeight;
-      if (w <= 0 || h <= 0) return;
-      camera.aspect = w / h;
-      camera.updateProjectionMatrix();
+      renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
       renderer.setSize(w, h);
-    }
+      stageEl.insertBefore(renderer.domElement, stageEl.firstChild);
 
-    function bindPointerControls(wrap) {
-      wrap.addEventListener(`pointerdown`, function (e) {
-        camState.isDragging = true;
-        camState.lastX = e.clientX;
-        camState.lastY = e.clientY;
-        wrap.setPointerCapture(e.pointerId);
-      });
+      // Lighting for clear 3D depth while preserving true Red & Blue tones
+      const ambient = new THREE.AmbientLight(0xffffff, 0.72);
+      scene.add(ambient);
 
-      wrap.addEventListener(`pointermove`, function (e) {
-        if (!camState.isDragging) return;
-        const dx = e.clientX - camState.lastX;
-        const dy = e.clientY - camState.lastY;
-        camState.lastX = e.clientX;
-        camState.lastY = e.clientY;
-        camState.targetTheta -= dx * 0.0085;
-        camState.targetPhi = Math.min(Math.PI * 0.92, Math.max(0.06, camState.targetPhi - dy * 0.0085));
-        if (appState.isTopView && Math.abs(dy) > 2) {
-          appState.isTopView = false;
-          updateHudButtons();
-        }
-      });
+      const hemi = new THREE.HemisphereLight(0xffffff, 0xd2d2d7, 0.35);
+      scene.add(hemi);
 
-      function endDrag(e) {
-        camState.isDragging = false;
-        try { wrap.releasePointerCapture(e.pointerId); } catch (_) {}
-      }
-      wrap.addEventListener(`pointerup`, endDrag);
-      wrap.addEventListener(`pointercancel`, endDrag);
+      const keyLight = new THREE.DirectionalLight(0xffffff, 0.7);
+      keyLight.position.set(12, 22, 14);
+      scene.add(keyLight);
 
-      wrap.addEventListener(`wheel`, function (e) {
-        e.preventDefault();
-        const factor = e.deltaY > 0 ? 1.09 : 0.91;
-        camState.targetRadius = Math.min(95, Math.max(7, camState.targetRadius * factor));
-      }, { passive: false });
-    }
+      const fillLight = new THREE.DirectionalLight(0xffffff, 0.32);
+      fillLight.position.set(-14, 10, -12);
+      scene.add(fillLight);
 
-    function makeFaceMaterial(kind) {
-      const isBase = kind === `base`;
-      const hex = appState.colorCoded
-        ? (isBase ? threePalette.baseColor : threePalette.lateralColor)
-        : (isBase ? threePalette.neutralBase : threePalette.neutralSide);
-
-      return new THREE.MeshStandardMaterial({
-        color: hex,
+      // Shared materials
+      baseMat = new THREE.MeshStandardMaterial({
+        color: new THREE.Color(THEME_COLORS.baseRed),
         roughness: 0.52,
         metalness: 0.04,
         side: THREE.DoubleSide,
@@ -1687,910 +1198,1273 @@
         polygonOffsetFactor: 1,
         polygonOffsetUnits: 1
       });
-    }
 
-    function addOutlinedGeometry(parent, geometry, kind) {
-      const mat = makeFaceMaterial(kind);
-      const mesh = new THREE.Mesh(geometry, mat);
-      parent.add(mesh);
-
-      const edges = new THREE.EdgesGeometry(geometry, 15);
-      const lineMat = new THREE.LineBasicMaterial({ color: threePalette.edgeColor });
-      const line = new THREE.LineSegments(edges, lineMat);
-      mesh.add(line);
-      return mesh;
-    }
-
-    function makePolygonShape(pts2D) {
-      const shape = new THREE.Shape();
-      shape.moveTo(pts2D[0][0], pts2D[0][1]);
-      for (let i = 1; i < pts2D.length; i++) {
-        shape.lineTo(pts2D[i][0], pts2D[i][1]);
-      }
-      shape.closePath();
-      return new THREE.ShapeGeometry(shape);
-    }
-
-    function makeEdgeWallHinge(p1, p2, H, u) {
-      const dx = p2[0] - p1[0];
-      const dz = p2[1] - p1[1];
-      const len = Math.hypot(dx, dz);
-      const midX = (p1[0] + p2[0]) / 2;
-      const midZ = (p1[1] + p2[1]) / 2;
-
-      const hinge = new THREE.Group();
-      hinge.position.set(midX, 0, midZ);
-
-      if (len > 1e-5) {
-        const localX = new THREE.Vector3(dx / len, 0, dz / len);
-        const localY = new THREE.Vector3(0, 1, 0);
-        const localZ = new THREE.Vector3().crossVectors(localX, localY).normalize();
-        const basis = new THREE.Matrix4().makeBasis(localX, localY, localZ);
-        hinge.quaternion.setFromRotationMatrix(basis);
-      }
-
-      const fold = new THREE.Group();
-      fold.rotation.x = u * (Math.PI / 2);
-      hinge.add(fold);
-
-      if (len > 1e-5) {
-        const geom = new THREE.PlaneGeometry(len, H);
-        const mesh = addOutlinedGeometry(fold, geom, `lateral`);
-        mesh.position.set(0, H / 2, 0);
-      }
-
-      return { hinge, fold, len };
-    }
-
-    function clearGroup(group) {
-      while (group.children.length > 0) {
-        const child = group.children[0];
-        clearGroup(child);
-        if (child.geometry) child.geometry.dispose();
-        if (child.material) {
-          if (Array.isArray(child.material)) child.material.forEach(function (m) { m.dispose(); });
-          else child.material.dispose();
-        }
-        group.remove(child);
-      }
-    }
-
-    function addHeightGuideLine(parent, x1, y1, z1, x2, y2, z2) {
-      const pts = [new THREE.Vector3(x1, y1, z1), new THREE.Vector3(x2, y2, z2)];
-      const geom = new THREE.BufferGeometry().setFromPoints(pts);
-      const mat = new THREE.LineDashedMaterial({
-        color: threePalette.edgeColor,
-        dashSize: 0.28,
-        gapSize: 0.18
+      lateralMat = new THREE.MeshStandardMaterial({
+        color: new THREE.Color(THEME_COLORS.lateralBlue),
+        roughness: 0.52,
+        metalness: 0.04,
+        side: THREE.DoubleSide,
+        polygonOffset: true,
+        polygonOffsetFactor: 1,
+        polygonOffsetUnits: 1
       });
-      const line = new THREE.Line(geom, mat);
-      line.computeLineDistances();
-      parent.add(line);
+
+      edgeMat = new THREE.LineBasicMaterial({
+        color: new THREE.Color(THEME_COLORS.edgeInk),
+        transparent: true,
+        opacity: 0.65
+      });
+
+      heightLineMat = new THREE.LineDashedMaterial({
+        color: 0xffffff,
+        dashSize: 0.3,
+        gapSize: 0.2,
+        transparent: true,
+        opacity: 0.95
+      });
+
+      gridHelper = new THREE.GridHelper(44, 44, new THREE.Color(THEME_COLORS.stageGrid), new THREE.Color(THEME_COLORS.stageGrid));
+      if (Array.isArray(gridHelper.material)) {
+        gridHelper.material.forEach(function (m) { m.transparent = true; m.opacity = 0.45; });
+      } else {
+        gridHelper.material.transparent = true;
+        gridHelper.material.opacity = 0.45;
+      }
+      scene.add(gridHelper);
+
+      prismRoot = new THREE.Group();
+      scene.add(prismRoot);
+
+      bindStageControls();
+      window.addEventListener('resize', handleResize);
+      startRenderLoop();
     }
 
-    function rebuildSolid3D() {
-      if (!webglAvailable || !rootGroup) return;
-      clearGroup(rootGroup);
-      activeAnchors = [];
+    function bindStageControls() {
+      if (!stageEl) return;
 
-      const u = appState.unfold / 100;
+      stageEl.addEventListener('pointerdown', function (e) {
+        if (e.target && e.target.closest && e.target.closest('button')) return;
+        stageEl.setPointerCapture(e.pointerId);
+        pointerState.active.set(e.pointerId, { x: e.clientX, y: e.clientY });
+        if (pointerState.active.size === 1) {
+          pointerState.lastX = e.clientX;
+          pointerState.lastY = e.clientY;
+        } else if (pointerState.active.size === 2) {
+          const pts = Array.from(pointerState.active.values());
+          pointerState.lastDist = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
+        }
+      });
+
+      stageEl.addEventListener('pointermove', function (e) {
+        if (!pointerState.active.has(e.pointerId)) return;
+        pointerState.active.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
+        if (pointerState.active.size === 1) {
+          const dx = e.clientX - pointerState.lastX;
+          const dy = e.clientY - pointerState.lastY;
+          pointerState.lastX = e.clientX;
+          pointerState.lastY = e.clientY;
+          camOrbit.targetTheta -= dx * 0.0085;
+          camOrbit.targetPhi = Math.max(0.12, Math.min(Math.PI - 0.12, camOrbit.targetPhi - dy * 0.0085));
+        } else if (pointerState.active.size === 2) {
+          const pts = Array.from(pointerState.active.values());
+          const dist = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
+          if (pointerState.lastDist > 0 && dist > 0) {
+            const ratio = pointerState.lastDist / dist;
+            camOrbit.targetZoom = Math.max(0.45, Math.min(2.4, camOrbit.targetZoom * ratio));
+          }
+          pointerState.lastDist = dist;
+        }
+      });
+
+      function releasePointer(e) {
+        pointerState.active.delete(e.pointerId);
+        if (pointerState.active.size === 1) {
+          const remaining = Array.from(pointerState.active.values())[0];
+          pointerState.lastX = remaining.x;
+          pointerState.lastY = remaining.y;
+        }
+      }
+
+      stageEl.addEventListener('pointerup', releasePointer);
+      stageEl.addEventListener('pointercancel', releasePointer);
+
+      stageEl.addEventListener('wheel', function (e) {
+        e.preventDefault();
+        const factor = e.deltaY > 0 ? 1.08 : 0.92;
+        camOrbit.targetZoom = Math.max(0.45, Math.min(2.4, camOrbit.targetZoom * factor));
+      }, { passive: false });
+    }
+
+    function handleResize() {
+      if (!stageEl || !renderer || !camera) return;
+      const w = Math.max(stageEl.clientWidth, 280);
+      const h = Math.max(stageEl.clientHeight, 300);
+      camera.aspect = w / h;
+      camera.updateProjectionMatrix();
+      renderer.setSize(w, h);
+    }
+
+    /* ============================================================
+       4. Exact Geometry Specification & Math For All 5 Prisms
+       ============================================================ */
+    function computePrismSpec() {
       const s = appState.shape;
       const d = appState.dims[s];
+      let vertices = []; // CCW from +Y: [{x, z}, ...], edge 0 is V0 -> V1 along +X
+      let height = 5;
+      let baseArea = 0;
+      let perimeter = 0;
+      let sideLengths = [];
+      let sideNames = [];
+      let baseFormulaHtml = '';
+      let baseHeightLine = null; // optional { x1, z1, x2, z2, label }
 
-      // Reposition floor grid so it stays directly beneath the model
-      const floorGrid = scene.getObjectByName(`floorGrid`);
-
-      if (s === `parallelogram`) {
-        const b = d.b;
-        const hp = d.hp;
-        const slant = Math.max(d.s, hp);
-        const H = d.H;
-        const k = Math.sqrt(Math.max(0, slant * slant - hp * hp));
-
-        // 4 corners in XZ plane (CCW from +Y)
-        const p1 = [-b / 2 - k / 2, +hp / 2];
-        const p2 = [+b / 2 - k / 2, +hp / 2];
-        const p3 = [+b / 2 + k / 2, -hp / 2];
-        const p4 = [-b / 2 + k / 2, -hp / 2];
-
-        // Bottom base in XZ (ShapeGeometry is in XY, rotate -PI/2 around X -> (x, -y) -> (x, 0, -y))
-        const bottomGeom = makePolygonShape([
-          [p1[0], -p1[1]],
-          [p2[0], -p2[1]],
-          [p3[0], -p3[1]],
-          [p4[0], -p4[1]]
-        ]);
-        const bottomMesh = addOutlinedGeometry(rootGroup, bottomGeom, `base`);
-        bottomMesh.rotation.x = -Math.PI / 2;
-
-        // 4 lateral walls
-        const front = makeEdgeWallHinge(p1, p2, H, u);
-        const right = makeEdgeWallHinge(p2, p3, H, u);
-        const back = makeEdgeWallHinge(p3, p4, H, u);
-        const left = makeEdgeWallHinge(p4, p1, H, u);
-        rootGroup.add(front.hinge, right.hinge, back.hinge, left.hinge);
-
-        // Top base hinged to front wall's top edge
-        const topHinge = new THREE.Group();
-        topHinge.position.set(0, H, 0);
-        topHinge.rotation.x = -(1 - u) * (Math.PI / 2);
-        front.fold.add(topHinge);
-
-        const topGeom = makePolygonShape([
-          [-b / 2, 0],
-          [+b / 2, 0],
-          [+b / 2 + k, hp],
-          [-b / 2 + k, hp]
-        ]);
-        addOutlinedGeometry(topHinge, topGeom, `base`);
-
-        // Perpendicular height guide on bottom base
-        const gx = Math.min(p2[0] - 0.1, Math.max(p1[0] + 0.1, p4[0]));
-        addHeightGuideLine(rootGroup, gx, 0.02, -hp / 2, gx, 0.02, +hp / 2);
-
-        rootGroup.position.set(0, -(1 - u) * (H / 2), -u * (hp / 2));
-        if (floorGrid) floorGrid.position.y = -(1 - u) * (H / 2) - 0.05;
-
-        // Label anchors (local to rootGroup)
-        activeAnchors.push({ text: `底 b = ${fmt(b)}`, kind: `base`, obj: rootGroup, pos: new THREE.Vector3(-k / 2, 0.2, hp / 2 + 0.5) });
-        activeAnchors.push({ text: `垂直高 h = ${fmt(hp)}`, kind: `base`, obj: rootGroup, pos: new THREE.Vector3(gx, 0.35, 0) });
-        activeAnchors.push({ text: `斜邊 s = ${fmt(slant)}`, kind: `lateral`, obj: rootGroup, pos: new THREE.Vector3(b / 2 + 0.5, 0.2, 0) });
-        activeAnchors.push({ text: `柱高 H = ${fmt(H)}`, kind: `lateral`, obj: front.fold, pos: new THREE.Vector3(b / 2 + 0.4, H / 2, 0) });
+      if (s === 'cuboid') {
+        const l = d.length;
+        const w = d.width;
+        height = d.height;
+        vertices = [
+          { x: -l / 2, z: w / 2 },
+          { x: l / 2, z: w / 2 },
+          { x: l / 2, z: -w / 2 },
+          { x: -l / 2, z: -w / 2 }
+        ];
+        baseArea = l * w;
+        sideLengths = [l, w, l, w];
+        sideNames = [`正面 (長)`, `右面 (闊)`, `背面 (長)`, `左面 (闊)`];
+        baseFormulaHtml = `長 × 闊 = ${fmt(l)} × ${fmt(w)} = ${fmt(baseArea)} cm²`;
+      } else if (s === 'cube') {
+        const side = d.side;
+        height = side;
+        vertices = [
+          { x: -side / 2, z: side / 2 },
+          { x: side / 2, z: side / 2 },
+          { x: side / 2, z: -side / 2 },
+          { x: -side / 2, z: -side / 2 }
+        ];
+        baseArea = side * side;
+        sideLengths = [side, side, side, side];
+        sideNames = [`側面 1`, `側面 2`, `側面 3`, `側面 4`];
+        baseFormulaHtml = `邊長 × 邊長 = ${fmt(side)} × ${fmt(side)} = ${fmt(baseArea)} cm²`;
+      } else if (s === 'parallelogram') {
+        const b = d.base;
+        const hb = d.baseHeight;
+        const slant = Math.max(d.slant, hb);
+        height = d.height;
+        const offset = Math.sqrt(Math.max(0, slant * slant - hb * hb));
+        const cx = (b + offset) / 2;
+        vertices = [
+          { x: 0 - cx, z: hb / 2 },
+          { x: b - cx, z: hb / 2 },
+          { x: b + offset - cx, z: -hb / 2 },
+          { x: offset - cx, z: -hb / 2 }
+        ];
+        baseArea = b * hb;
+        sideLengths = [b, slant, b, slant];
+        sideNames = [`前側面 (底)`, `右側面 (斜邊)`, `後側面 (底)`, `左側面 (斜邊)`];
+        baseFormulaHtml = `底 × 底高 = ${fmt(b)} × ${fmt(hb)} = ${fmt(baseArea)} cm²（註：斜邊長為 ${fmt(slant)} cm）`;
+        baseHeightLine = {
+          x1: vertices[3].x, z1: vertices[3].z,
+          x2: vertices[3].x, z2: vertices[0].z,
+          extX1: vertices[1].x, extZ1: vertices[1].z,
+          extX2: vertices[3].x, extZ2: vertices[0].z,
+          needsExt: offset > b,
+          label: `底高 ${fmt(hb)}`
+        };
+      } else if (s === 'triangle') {
+        const b = d.base;
+        const hb = d.baseHeight;
+        const apexX = d.apexOffset;
+        height = d.height;
+        const cx = (0 + b + apexX) / 3;
+        const cz = (hb / 2 + hb / 2 - hb / 2) / 3;
+        vertices = [
+          { x: 0 - cx, z: hb / 2 - cz },
+          { x: b - cx, z: hb / 2 - cz },
+          { x: apexX - cx, z: -hb / 2 - cz }
+        ];
+        const s1 = Math.hypot(b - apexX, hb);
+        const s2 = Math.hypot(apexX, hb);
+        baseArea = 0.5 * b * hb;
+        sideLengths = [b, s1, s2];
+        sideNames = [`底邊側面`, `右斜側面`, `左斜側面`];
+        baseFormulaHtml = `(底 × 底高) ÷ 2 = (${fmt(b)} × ${fmt(hb)}) ÷ 2 = ${fmt(baseArea)} cm²`;
+        baseHeightLine = {
+          x1: vertices[2].x, z1: vertices[2].z,
+          x2: vertices[2].x, z2: vertices[0].z,
+          extX1: apexX > b ? vertices[1].x : vertices[0].x,
+          extZ1: vertices[0].z,
+          extX2: vertices[2].x,
+          extZ2: vertices[0].z,
+          needsExt: apexX < 0 || apexX > b,
+          label: `底高 ${fmt(hb)}`
+        };
+      } else if (s === 'trapezoid') {
+        const a = d.topBase;
+        const b = d.bottomBase;
+        const hb = d.baseHeight;
+        height = d.height;
+        const offset = d.trapType === 'right' ? 0 : (b - a) / 2;
+        const minX = Math.min(0, offset);
+        const maxX = Math.max(b, offset + a);
+        const cx = (minX + maxX) / 2;
+        vertices = [
+          { x: 0 - cx, z: hb / 2 },
+          { x: b - cx, z: hb / 2 },
+          { x: offset + a - cx, z: -hb / 2 },
+          { x: offset - cx, z: -hb / 2 }
+        ];
+        const rightLeg = Math.hypot((offset + a) - b, hb);
+        const leftLeg = Math.hypot(offset, hb);
+        baseArea = ((a + b) * hb) / 2;
+        sideLengths = [b, rightLeg, a, leftLeg];
+        sideNames = [`下底側面`, `右腰側面`, `上底側面`, `左腰側面`];
+        baseFormulaHtml = `(上底 + 下底) × 底高 ÷ 2 = (${fmt(a)} + ${fmt(b)}) × ${fmt(hb)} ÷ 2 = ${fmt(baseArea)} cm²`;
+        baseHeightLine = {
+          x1: vertices[3].x, z1: vertices[3].z,
+          x2: vertices[3].x, z2: vertices[0].z,
+          extX1: vertices[0].x, extZ1: vertices[0].z,
+          extX2: vertices[3].x, extZ2: vertices[0].z,
+          needsExt: offset < 0,
+          label: `底高 ${fmt(hb)}`
+        };
       }
-      else if (s === `cuboid` || s === `cube`) {
-        const L = s === `cube` ? d.a : d.L;
-        const W = s === `cube` ? d.a : d.W;
-        const H = s === `cube` ? d.a : d.H;
 
-        const p1 = [-L / 2, +W / 2];
-        const p2 = [+L / 2, +W / 2];
-        const p3 = [+L / 2, -W / 2];
-        const p4 = [-L / 2, -W / 2];
+      perimeter = sideLengths.reduce(function (acc, v) { return acc + v; }, 0);
+      const twoBasesArea = baseArea * 2;
+      const lateralArea = perimeter * height;
+      const tsa = twoBasesArea + lateralArea;
 
-        const bottomGeom = new THREE.PlaneGeometry(L, W);
-        const bottomMesh = addOutlinedGeometry(rootGroup, bottomGeom, `base`);
-        bottomMesh.rotation.x = -Math.PI / 2;
+      return {
+        shape: s,
+        vertices,
+        height,
+        sideLengths,
+        sideNames,
+        baseArea,
+        twoBasesArea,
+        perimeter,
+        lateralArea,
+        tsa,
+        baseFormulaHtml,
+        baseHeightLine
+      };
+    }
 
-        const front = makeEdgeWallHinge(p1, p2, H, u);
-        const right = makeEdgeWallHinge(p2, p3, H, u);
-        const back = makeEdgeWallHinge(p3, p4, H, u);
-        const left = makeEdgeWallHinge(p4, p1, H, u);
-        rootGroup.add(front.hinge, right.hinge, back.hinge, left.hinge);
-
-        // Top base hinged on Back wall's top edge
-        const topHinge = new THREE.Group();
-        topHinge.position.set(0, H, 0);
-        topHinge.rotation.x = -(1 - u) * (Math.PI / 2);
-        back.fold.add(topHinge);
-
-        const topGeom = new THREE.PlaneGeometry(L, W);
-        const topMesh = addOutlinedGeometry(topHinge, topGeom, `base`);
-        topMesh.position.set(0, W / 2, 0);
-
-        rootGroup.position.set(0, -(1 - u) * (H / 2), +u * (W / 2));
-        if (floorGrid) floorGrid.position.y = -(1 - u) * (H / 2) - 0.05;
-
-        if (s === `cube`) {
-          activeAnchors.push({ text: `邊長 a = ${fmt(L)}`, kind: `base`, obj: rootGroup, pos: new THREE.Vector3(0, 0.2, W / 2 + 0.5) });
-          activeAnchors.push({ text: `高 a = ${fmt(H)}`, kind: `lateral`, obj: front.fold, pos: new THREE.Vector3(L / 2 + 0.4, H / 2, 0) });
-        } else {
-          activeAnchors.push({ text: `長 l = ${fmt(L)}`, kind: `base`, obj: rootGroup, pos: new THREE.Vector3(0, 0.2, W / 2 + 0.5) });
-          activeAnchors.push({ text: `闊 w = ${fmt(W)}`, kind: `base`, obj: rootGroup, pos: new THREE.Vector3(L / 2 + 0.5, 0.2, 0) });
-          activeAnchors.push({ text: `高 h = ${fmt(H)}`, kind: `lateral`, obj: front.fold, pos: new THREE.Vector3(L / 2 + 0.4, H / 2, 0) });
+    /* ============================================================
+       5. Build 3D Prism & Dual-Mode Unfolding Tree
+       ============================================================ */
+    function disposeObjectTree(group) {
+      if (!group) return;
+      group.traverse(function (obj) {
+        if (obj.geometry) {
+          obj.geometry.dispose();
         }
+      });
+      while (group.children.length > 0) {
+        group.remove(group.children[0]);
       }
-      else if (s === `triangular`) {
-        const b = d.b;
-        const ht = d.ht;
-        const clampedD = Math.min(Math.max(0, d.d), b);
-        const H = d.H;
+    }
 
-        const p1 = [-b / 2, +ht / 2];
-        const p2 = [+b / 2, +ht / 2];
-        const p3 = [-b / 2 + clampedD, -ht / 2];
-
-        const bottomGeom = makePolygonShape([
-          [p1[0], -p1[1]],
-          [p2[0], -p2[1]],
-          [p3[0], -p3[1]]
-        ]);
-        const bottomMesh = addOutlinedGeometry(rootGroup, bottomGeom, `base`);
-        bottomMesh.rotation.x = -Math.PI / 2;
-
-        const front = makeEdgeWallHinge(p1, p2, H, u);
-        const right = makeEdgeWallHinge(p2, p3, H, u);
-        const left = makeEdgeWallHinge(p3, p1, H, u);
-        rootGroup.add(front.hinge, right.hinge, left.hinge);
-
-        // Top triangle hinged on Front wall's top edge
-        const topHinge = new THREE.Group();
-        topHinge.position.set(0, H, 0);
-        topHinge.rotation.x = -(1 - u) * (Math.PI / 2);
-        front.fold.add(topHinge);
-
-        const topGeom = makePolygonShape([
-          [-b / 2, 0],
-          [+b / 2, 0],
-          [-b / 2 + clampedD, ht]
-        ]);
-        addOutlinedGeometry(topHinge, topGeom, `base`);
-
-        // Height guide on bottom triangle
-        addHeightGuideLine(rootGroup, p3[0], 0.02, p3[1], p3[0], 0.02, +ht / 2);
-
-        rootGroup.position.set(0, -(1 - u) * (H / 2), -u * (ht / 3));
-        if (floorGrid) floorGrid.position.y = -(1 - u) * (H / 2) - 0.05;
-
-        const s2 = Math.hypot(clampedD, ht);
-        const s3 = Math.hypot(b - clampedD, ht);
-        activeAnchors.push({ text: `底 b = ${fmt(b)}`, kind: `base`, obj: rootGroup, pos: new THREE.Vector3(0, 0.2, ht / 2 + 0.5) });
-        activeAnchors.push({ text: `三角形高 h = ${fmt(ht)}`, kind: `base`, obj: rootGroup, pos: new THREE.Vector3(p3[0], 0.35, 0) });
-        activeAnchors.push({ text: `s₂ = ${fmt(s2)}`, kind: `lateral`, obj: rootGroup, pos: new THREE.Vector3((p1[0] + p3[0]) / 2 - 0.6, 0.2, 0) });
-        activeAnchors.push({ text: `s₃ = ${fmt(s3)}`, kind: `lateral`, obj: rootGroup, pos: new THREE.Vector3((p2[0] + p3[0]) / 2 + 0.6, 0.2, 0) });
-        activeAnchors.push({ text: `柱高 H = ${fmt(H)}`, kind: `lateral`, obj: front.fold, pos: new THREE.Vector3(b / 2 + 0.4, H / 2, 0) });
+    function createPolygonMesh(pts2D, material) {
+      // pts2D: array of {x, z} in XZ plane (y = 0)
+      // Build THREE.Shape in XY plane with y = -z, then rotateX(-PI/2) so (x, y) -> (x, 0, -y) = (x, 0, z)
+      const shape = new THREE.Shape();
+      shape.moveTo(pts2D[0].x, -pts2D[0].z);
+      for (let i = 1; i < pts2D.length; i++) {
+        shape.lineTo(pts2D[i].x, -pts2D[i].z);
       }
-      else if (s === `cylinder`) {
-        const r = d.r;
-        const H = d.H;
-        const segs = 64;
+      shape.closePath();
 
-        // Bottom circle on y=0
-        const botGeom = new THREE.CircleGeometry(r, segs);
-        const botMesh = addOutlinedGeometry(rootGroup, botGeom, `base`);
-        botMesh.rotation.x = -Math.PI / 2;
-        addHeightGuideLine(rootGroup, 0, 0.02, 0, r, 0.02, 0);
+      const geom = new THREE.ShapeGeometry(shape);
+      geom.rotateX(-Math.PI / 2);
+      const mesh = new THREE.Mesh(geom, material);
 
-        // Wall tilt group anchored at back tangent (0, 0, -r)
-        const wallTilt = new THREE.Group();
-        wallTilt.position.set(0, 0, -r);
-        wallTilt.rotation.x = -u * (Math.PI / 2);
-        rootGroup.add(wallTilt);
+      const linePts = [];
+      for (let i = 0; i < pts2D.length; i++) {
+        const a = pts2D[i];
+        const b = pts2D[(i + 1) % pts2D.length];
+        linePts.push(new THREE.Vector3(a.x, 0.005, a.z));
+        linePts.push(new THREE.Vector3(b.x, 0.005, b.z));
+      }
+      const lineGeom = new THREE.BufferGeometry().setFromPoints(linePts);
+      const lines = new THREE.LineSegments(lineGeom, edgeMat);
 
-        // Build curved lateral surface that unrolls into 2*pi*r x H
-        const latGeom = new THREE.BufferGeometry();
-        const verts = [];
-        const indices = [];
-        const cols = segs;
-        for (let row = 0; row <= 1; row++) {
-          const yPos = row * H;
-          for (let i = 0; i <= cols; i++) {
-            const t = i / cols - 0.5; // -0.5 .. +0.5
-            let xPos, zPos;
-            if (1 - u > 0.0005) {
-              const R = r / (1 - u);
-              const alpha = t * 2 * Math.PI * (1 - u);
-              xPos = R * Math.sin(alpha);
-              zPos = R * (1 - Math.cos(alpha));
-            } else {
-              xPos = t * 2 * Math.PI * r;
-              zPos = 0;
+      const wrapper = new THREE.Group();
+      wrapper.add(mesh);
+      wrapper.add(lines);
+      return wrapper;
+    }
+
+    function createHeightMarker(lineSpec, yOffset) {
+      if (!lineSpec) return null;
+      const g = new THREE.Group();
+      const pts = [
+        new THREE.Vector3(lineSpec.x1, yOffset, lineSpec.z1),
+        new THREE.Vector3(lineSpec.x2, yOffset, lineSpec.z2)
+      ];
+      const geom = new THREE.BufferGeometry().setFromPoints(pts);
+      const line = new THREE.Line(geom, heightLineMat);
+      line.computeLineDistances();
+      g.add(line);
+
+      // Right-angle corner mark near foot (x2, z2)
+      const sz = 0.32;
+      const dirX = lineSpec.x2 <= 0 ? 1 : -1;
+      const raPts = [
+        new THREE.Vector3(lineSpec.x2, yOffset, lineSpec.z2 - sz),
+        new THREE.Vector3(lineSpec.x2 + sz * dirX, yOffset, lineSpec.z2 - sz),
+        new THREE.Vector3(lineSpec.x2 + sz * dirX, yOffset, lineSpec.z2)
+      ];
+      const raGeom = new THREE.BufferGeometry().setFromPoints(raPts);
+      const raLine = new THREE.Line(raGeom, new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.9 }));
+      g.add(raLine);
+
+      if (lineSpec.needsExt) {
+        const extPts = [
+          new THREE.Vector3(lineSpec.extX1, yOffset, lineSpec.extZ1),
+          new THREE.Vector3(lineSpec.extX2, yOffset, lineSpec.extZ2)
+        ];
+        const extGeom = new THREE.BufferGeometry().setFromPoints(extPts);
+        const extLine = new THREE.Line(extGeom, heightLineMat);
+        extLine.computeLineDistances();
+        g.add(extLine);
+      }
+      return g;
+    }
+
+    function createRectFace(width, height, material) {
+      // Quad in local XY plane from x: [0, width], y: [0, height], z = 0
+      const geom = new THREE.PlaneGeometry(width, height);
+      geom.translate(width / 2, height / 2, 0);
+      const mesh = new THREE.Mesh(geom, material);
+
+      const edgesGeom = new THREE.EdgesGeometry(geom);
+      const edges = new THREE.LineSegments(edgesGeom, edgeMat);
+
+      const g = new THREE.Group();
+      g.add(mesh);
+      g.add(edges);
+      return g;
+    }
+
+    function rebuildPrism3D(spec) {
+      if (!prismRoot) return;
+      disposeObjectTree(prismRoot);
+      labelAnchors = [];
+
+      const V = spec.vertices;
+      const N = V.length;
+      const H = spec.height;
+      const groundY = -H / 2;
+
+      if (gridHelper) {
+        gridHelper.position.y = groundY - 0.04;
+      }
+
+      // Compute edge unit tangents, outward normals, and exterior turning angles
+      const tangents = [];
+      const normals = [];
+      const lengths = [];
+      const extAngles = [];
+      const upVec = new THREE.Vector3(0, 1, 0);
+
+      for (let i = 0; i < N; i++) {
+        const a = V[i];
+        const b = V[(i + 1) % N];
+        const dx = b.x - a.x;
+        const dz = b.z - a.z;
+        const len = Math.hypot(dx, dz);
+        const t = new THREE.Vector3(dx / len, 0, dz / len);
+        const n = new THREE.Vector3().crossVectors(t, upVec).normalize();
+        tangents.push(t);
+        normals.push(n);
+        lengths.push(len);
+      }
+
+      for (let i = 0; i < N; i++) {
+        const tIn = tangents[(i - 1 + N) % N];
+        const tOut = tangents[i];
+        const crossY = new THREE.Vector3().crossVectors(tIn, tOut).dot(upVec);
+        const dotVal = tIn.dot(tOut);
+        extAngles.push(Math.atan2(crossY, dotVal));
+      }
+
+      // Assembly group shifted during unfold so net stays nicely centered
+      const assembly = new THREE.Group();
+      prismRoot.add(assembly);
+
+      // 1. Bottom Base (Red) anchored at y = groundY
+      const bottomBaseGroup = createPolygonMesh(V, baseMat);
+      bottomBaseGroup.position.set(0, groundY, 0);
+      const bottomHeightMark = createHeightMarker(spec.baseHeightLine, 0.015);
+      if (bottomHeightMark) bottomBaseGroup.add(bottomHeightMark);
+      assembly.add(bottomBaseGroup);
+
+      // Helper for Top Base mesh inside Face 0's local frame (relative to V[0])
+      function buildTopBaseGroup() {
+        const localPts = V.map(function (pt) {
+          return { x: pt.x - V[0].x, z: pt.z - V[0].z };
+        });
+        const topPoly = createPolygonMesh(localPts, baseMat);
+        if (spec.baseHeightLine) {
+          const localLine = {
+            x1: spec.baseHeightLine.x1 - V[0].x,
+            z1: spec.baseHeightLine.z1 - V[0].z,
+            x2: spec.baseHeightLine.x2 - V[0].x,
+            z2: spec.baseHeightLine.z2 - V[0].z,
+            extX1: spec.baseHeightLine.extX1 - V[0].x,
+            extZ1: spec.baseHeightLine.extZ1 - V[0].z,
+            extX2: spec.baseHeightLine.extX2 - V[0].x,
+            extZ2: spec.baseHeightLine.extZ2 - V[0].z,
+            needsExt: spec.baseHeightLine.needsExt
+          };
+          const topMark = createHeightMarker(localLine, 0.018);
+          if (topMark) topPoly.add(topMark);
+        }
+        return topPoly;
+      }
+
+      // 2. Build Lateral Faces + Top Base according to unfoldMode
+      if (appState.unfoldMode === 'strip') {
+        // Face 0 pivot at V[0]
+        const face0Pivot = new THREE.Group();
+        face0Pivot.position.set(V[0].x, groundY, V[0].z);
+        face0Pivot.quaternion.setFromUnitVectors(new THREE.Vector3(1, 0, 0), tangents[0]);
+        assembly.add(face0Pivot);
+
+        const face0Fold = new THREE.Group();
+        face0Pivot.add(face0Fold);
+
+        const face0Mesh = createRectFace(lengths[0], H, lateralMat);
+        face0Fold.add(face0Mesh);
+
+        const f0LabelNode = new THREE.Object3D();
+        f0LabelNode.position.set(lengths[0] / 2, H / 2, 0.05);
+        face0Fold.add(f0LabelNode);
+        labelAnchors.push({ node: f0LabelNode, text: `${spec.sideNames[0]} ${fmt(lengths[0])}×${fmt(H)}`, type: 'blue' });
+
+        // Top Base attached to top edge of Face 0
+        const topBaseHinge = new THREE.Group();
+        topBaseHinge.position.set(0, H, 0);
+        const topBaseGroup = buildTopBaseGroup();
+        topBaseHinge.add(topBaseGroup);
+        face0Fold.add(topBaseHinge);
+
+        const topLabelNode = new THREE.Object3D();
+        topLabelNode.position.set(-V[0].x, 0.15, -V[0].z);
+        topBaseHinge.add(topLabelNode);
+        labelAnchors.push({ node: topLabelNode, text: `頂面 (紅)`, type: 'red' });
+
+        // Left-chained face: Face N-1 attached at x = 0
+        const leftHinge = new THREE.Group();
+        leftHinge.position.set(0, 0, 0);
+        face0Fold.add(leftHinge);
+
+        const leftFaceMesh = createRectFace(lengths[N - 1], H, lateralMat);
+        leftFaceMesh.position.set(-lengths[N - 1], 0, 0);
+        leftHinge.add(leftFaceMesh);
+
+        const fLeftNode = new THREE.Object3D();
+        fLeftNode.position.set(-lengths[N - 1] / 2, H / 2, 0.05);
+        leftHinge.add(fLeftNode);
+        labelAnchors.push({ node: fLeftNode, text: `${spec.sideNames[N - 1]} ${fmt(lengths[N - 1])}×${fmt(H)}`, type: 'blue' });
+
+        // Right-chained faces: 1 .. N-2
+        const rightHinges = [];
+        let parentRight = face0Fold;
+        let offsetX = lengths[0];
+        for (let i = 1; i <= N - 2; i++) {
+          const rh = new THREE.Group();
+          rh.position.set(offsetX, 0, 0);
+          parentRight.add(rh);
+
+          const rMesh = createRectFace(lengths[i], H, lateralMat);
+          rh.add(rMesh);
+
+          const rNode = new THREE.Object3D();
+          rNode.position.set(lengths[i] / 2, H / 2, 0.05);
+          rh.add(rNode);
+          labelAnchors.push({ node: rNode, text: `${spec.sideNames[i]} ${fmt(lengths[i])}×${fmt(H)}`, type: 'blue' });
+
+          rightHinges.push({ group: rh, angle: extAngles[i] });
+          parentRight = rh;
+          offsetX = lengths[i];
+        }
+
+        // Compute net bounding center shift at u = 1 so flat strip stays centered
+        const stripMinX = V[0].x - lengths[N - 1];
+        let stripMaxX = V[0].x + lengths[0];
+        for (let i = 1; i <= N - 2; i++) stripMaxX += lengths[i];
+        const stripCenterX = (stripMinX + stripMaxX) / 2;
+
+        // Z center at u=1: from minZ of bottom base to maxZ of top base
+        let minZ = Infinity;
+        let maxZ = -Infinity;
+        V.forEach(function (pt) {
+          if (pt.z < minZ) minZ = pt.z;
+          if (pt.z > maxZ) maxZ = pt.z;
+        });
+        const topExtendZ = V[0].z + H + (V[0].z - minZ);
+        const netCenterZ = (minZ + topExtendZ) / 2;
+
+        // Radius estimates for camera framing
+        const solidRadius = Math.max(H, spec.perimeter / 3.2, 4.5);
+        const netRadius = Math.max((stripMaxX - stripMinX) * 0.55, (topExtendZ - minZ) * 0.65, 6);
+
+        foldController = {
+          mode: 'strip',
+          solidRadius,
+          netRadius,
+          apply: function (u) {
+            const halfPi = Math.PI / 2;
+            face0Fold.rotation.x = halfPi * u;
+            topBaseHinge.rotation.x = halfPi * u;
+            leftHinge.rotation.y = -extAngles[0] * (1 - u);
+            for (let k = 0; k < rightHinges.length; k++) {
+              rightHinges[k].group.rotation.y = rightHinges[k].angle * (1 - u);
             }
-            verts.push(xPos, yPos, zPos);
+            assembly.position.set(-stripCenterX * u, 0, -netCenterZ * u);
           }
-        }
-        for (let i = 0; i < cols; i++) {
-          const a = i;
-          const bIdx = i + 1;
-          const c = (cols + 1) + i;
-          const dIdx = (cols + 1) + i + 1;
-          indices.push(a, bIdx, dIdx);
-          indices.push(a, dIdx, c);
-        }
-        latGeom.setAttribute(`position`, new THREE.Float32BufferAttribute(verts, 3));
-        latGeom.setIndex(indices);
-        latGeom.computeVertexNormals();
+        };
+      } else {
+        // Separated Faces Mode: each lateral face hinges independently from its own base edge
+        const petals = [];
+        let topBaseHingeRef = null;
 
-        const latMesh = new THREE.Mesh(latGeom, makeFaceMaterial(`lateral`));
-        wallTilt.add(latMesh);
+        for (let i = 0; i < N; i++) {
+          const pivot = new THREE.Group();
+          pivot.position.set(V[i].x, groundY, V[i].z);
+          pivot.quaternion.setFromUnitVectors(new THREE.Vector3(1, 0, 0), tangents[i]);
+          assembly.add(pivot);
 
-        // Top & bottom rim curves + vertical seam edges on unrolling lateral sheet
-        const rimPoints = [];
-        for (let i = 0; i < cols; i++) {
-          const i0 = i * 3;
-          const i1 = (i + 1) * 3;
-          rimPoints.push(
-            verts[i0], verts[i0 + 1], verts[i0 + 2],
-            verts[i1], verts[i1 + 1], verts[i1 + 2]
-          );
-          const j0 = ((cols + 1) + i) * 3;
-          const j1 = ((cols + 1) + i + 1) * 3;
-          rimPoints.push(
-            verts[j0], verts[j0 + 1], verts[j0 + 2],
-            verts[j1], verts[j1 + 1], verts[j1 + 2]
-          );
+          const fold = new THREE.Group();
+          pivot.add(fold);
+
+          const rect = createRectFace(lengths[i], H, lateralMat);
+          fold.add(rect);
+
+          const fNode = new THREE.Object3D();
+          fNode.position.set(lengths[i] / 2, H / 2, 0.05);
+          fold.add(fNode);
+          labelAnchors.push({ node: fNode, text: `${spec.sideNames[i]} ${fmt(lengths[i])}×${fmt(H)}`, type: 'blue' });
+
+          if (i === 0) {
+            topBaseHingeRef = new THREE.Group();
+            topBaseHingeRef.position.set(0, H, 0);
+            const topPoly = buildTopBaseGroup();
+            topBaseHingeRef.add(topPoly);
+            fold.add(topBaseHingeRef);
+
+            const topLabelNode = new THREE.Object3D();
+            topLabelNode.position.set(-V[0].x, 0.15, -V[0].z);
+            topBaseHingeRef.add(topLabelNode);
+            labelAnchors.push({ node: topLabelNode, text: `頂面 (紅)`, type: 'red' });
+          }
+
+          petals.push({
+            pivot,
+            fold,
+            basePos: new THREE.Vector3(V[i].x, groundY, V[i].z),
+            normal: normals[i].clone()
+          });
         }
-        // Left and right vertical seam edges
-        const lastCol = cols * 3;
-        const topFirst = (cols + 1) * 3;
-        const topLast = ((cols + 1) + cols) * 3;
-        rimPoints.push(
-          verts[0], verts[1], verts[2], verts[topFirst], verts[topFirst + 1], verts[topFirst + 2],
-          verts[lastCol], verts[lastCol + 1], verts[lastCol + 2], verts[topLast], verts[topLast + 1], verts[topLast + 2]
+
+        const sepGap = Math.max(0.45, H * 0.08);
+        const solidRadius = Math.max(H, spec.perimeter / 3.2, 4.5);
+        const netRadius = Math.max(H * 1.45 + 3.5, spec.perimeter * 0.42);
+
+        foldController = {
+          mode: 'separated',
+          solidRadius,
+          netRadius,
+          apply: function (u) {
+            const halfPi = Math.PI / 2;
+            // Smooth separation from 0 after u > 0.35 so 3D prism is 100% airtight at u=0
+            const t = Math.max(0, Math.min(1, (u - 0.35) / 0.65));
+            const smoothSep = t * t * (3 - 2 * t) * sepGap;
+
+            for (let i = 0; i < petals.length; i++) {
+              const p = petals[i];
+              p.fold.rotation.x = halfPi * u;
+              p.pivot.position.copy(p.basePos).addScaledVector(p.normal, smoothSep);
+            }
+            if (topBaseHingeRef) {
+              topBaseHingeRef.rotation.x = halfPi * u;
+              topBaseHingeRef.position.set(0, H + smoothSep, 0);
+            }
+            assembly.position.set(0, 0, -(H * 0.32) * u);
+          }
+        };
+      }
+
+      // Add bottom base label anchor
+      const botLabelNode = new THREE.Object3D();
+      botLabelNode.position.set(0, 0.1, 0);
+      bottomBaseGroup.add(botLabelNode);
+      labelAnchors.push({ node: botLabelNode, text: `底面 (紅)`, type: 'red' });
+
+      if (spec.baseHeightLine) {
+        const hNode = new THREE.Object3D();
+        hNode.position.set(
+          (spec.baseHeightLine.x1 + spec.baseHeightLine.x2) / 2,
+          0.12,
+          (spec.baseHeightLine.z1 + spec.baseHeightLine.z2) / 2
         );
-        const rimGeom = new THREE.BufferGeometry();
-        rimGeom.setAttribute(`position`, new THREE.Float32BufferAttribute(rimPoints, 3));
-        const rimLine = new THREE.LineSegments(rimGeom, new THREE.LineBasicMaterial({ color: threePalette.edgeColor }));
-        wallTilt.add(rimLine);
+        bottomBaseGroup.add(hNode);
+        labelAnchors.push({ node: hNode, text: spec.baseHeightLine.label, type: 'dark' });
+      }
 
-        // Top circle hinged at (0, H, 0) inside wallTilt
-        const topHinge = new THREE.Group();
-        topHinge.position.set(0, H, 0);
-        topHinge.rotation.x = (1 - u) * (Math.PI / 2);
-        wallTilt.add(topHinge);
+      // Apply current unfoldPct immediately
+      foldController.apply(appState.unfoldPct / 100);
+      syncLabelsDom();
+    }
 
-        const topGeom = new THREE.CircleGeometry(r, segs);
-        const topMesh = addOutlinedGeometry(topHinge, topGeom, `base`);
-        topMesh.position.set(0, r, 0);
-        addHeightGuideLine(topHinge, 0, r, 0.02, r, r, 0.02);
-
-        rootGroup.position.set(0, -(1 - u) * (H / 2), +u * (H / 2 + r));
-        if (floorGrid) floorGrid.position.y = -(1 - u) * (H / 2) - 0.05;
-
-        activeAnchors.push({ text: `半徑 r = ${fmt(r)}`, kind: `base`, obj: rootGroup, pos: new THREE.Vector3(r / 2, 0.25, 0) });
-        activeAnchors.push({ text: `柱高 H = ${fmt(H)}`, kind: `lateral`, obj: wallTilt, pos: new THREE.Vector3(u > 0.5 ? Math.PI * r + 0.5 : r + 0.5, H / 2, u > 0.5 ? 0 : r) });
-        if (u > 0.65) {
-          activeAnchors.push({ text: `展開長 = 2πr ≈ ${fmt(2 * Math.PI * r)}`, kind: `lateral`, obj: wallTilt, pos: new THREE.Vector3(0, H + 0.6, 0) });
-        }
+    function syncLabelsDom() {
+      if (!labelsOverlayEl) return;
+      labelsOverlayEl.innerHTML = '';
+      if (!appState.showLabels) return;
+      for (let i = 0; i < labelAnchors.length; i++) {
+        const a = labelAnchors[i];
+        const tag = document.createElement('div');
+        tag.className = 'dim-tag';
+        if (a.type === 'red') tag.classList.add('is-red-tag');
+        else if (a.type === 'blue') tag.classList.add('is-blue-tag');
+        tag.textContent = a.text;
+        a.el = tag;
+        labelsOverlayEl.appendChild(tag);
       }
     }
 
     function updateProjectedLabels() {
-      const layer = document.getElementById(`labels-layer`);
-      const wrap = document.getElementById(`stage-wrap`);
-      if (!layer || !wrap) return;
+      if (!stageEl || !camera || !appState.showLabels) return;
+      const w = stageEl.clientWidth;
+      const h = stageEl.clientHeight;
+      const tempVec = new THREE.Vector3();
 
-      if (!appState.showLabels || !webglAvailable || !camera) {
-        layer.innerHTML = ``;
-        return;
+      for (let i = 0; i < labelAnchors.length; i++) {
+        const a = labelAnchors[i];
+        if (!a.el || !a.node) continue;
+        a.node.getWorldPosition(tempVec);
+        tempVec.project(camera);
+        if (tempVec.z > 1 || tempVec.z < -1) {
+          a.el.style.opacity = '0';
+          continue;
+        }
+        const x = (tempVec.x * 0.5 + 0.5) * w;
+        const y = (-tempVec.y * 0.5 + 0.5) * h;
+        if (x < 10 || x > w - 10 || y < 10 || y > h - 10) {
+          a.el.style.opacity = '0';
+        } else {
+          a.el.style.opacity = '1';
+          a.el.style.transform = `translate(-50%, -50%) translate(${x.toFixed(1)}px, ${y.toFixed(1)}px)`;
+        }
       }
+    }
 
-      const w = wrap.clientWidth;
-      const h = wrap.clientHeight;
-      if (w <= 0 || h <= 0) return;
-
-      scene.updateMatrixWorld(true);
-      let html = ``;
-      const v = new THREE.Vector3();
-
-      for (let i = 0; i < activeAnchors.length; i++) {
-        const a = activeAnchors[i];
-        v.copy(a.pos);
-        a.obj.localToWorld(v);
-        v.project(camera);
-        if (v.z > 1 || v.z < -1) continue;
-        const x = (v.x * 0.5 + 0.5) * w;
-        const y = (-v.y * 0.5 + 0.5) * h;
-        if (x < 12 || x > w - 12 || y < 48 || y > h - 28) continue;
-        const cls = a.kind === `base` ? `is-base` : `is-lateral`;
-        html += `<span class="dim-tag-3d ${cls}" style="left:${x.toFixed(1)}px;top:${y.toFixed(1)}px;">${a.text}</span>`;
+    function updateFaceHighlightVisuals() {
+      if (!baseMat || !lateralMat) return;
+      if (faceHighlightMode === 'base') {
+        baseMat.emissive.setHex(0x3a050a);
+        lateralMat.emissive.setHex(0x000000);
+        baseMat.opacity = 1;
+        lateralMat.transparent = true;
+        lateralMat.opacity = 0.42;
+      } else if (faceHighlightMode === 'lateral') {
+        baseMat.emissive.setHex(0x000000);
+        lateralMat.emissive.setHex(0x002454);
+        baseMat.transparent = true;
+        baseMat.opacity = 0.42;
+        lateralMat.opacity = 1;
+      } else if (faceHighlightMode === 'all') {
+        baseMat.emissive.setHex(0x280306);
+        lateralMat.emissive.setHex(0x001b40);
+        baseMat.transparent = false;
+        baseMat.opacity = 1;
+        lateralMat.transparent = false;
+        lateralMat.opacity = 1;
+      } else {
+        baseMat.emissive.setHex(0x000000);
+        lateralMat.emissive.setHex(0x000000);
+        baseMat.transparent = false;
+        baseMat.opacity = 1;
+        lateralMat.transparent = false;
+        lateralMat.opacity = 1;
       }
-      layer.innerHTML = html;
     }
 
     function startRenderLoop() {
-      if (!webglAvailable) return;
       if (animFrameId) cancelAnimationFrame(animFrameId);
+      let lastTime = performance.now();
 
-      function tick() {
+      function tick(now) {
+        const dt = Math.min((now - lastTime) / 1000, 0.05);
+        lastTime = now;
+
+        // Handle unfold play / snap animation
+        if (animPlaying) {
+          let nextPct = appState.unfoldPct + animDirection * dt * 42;
+          if (nextPct >= 100) {
+            nextPct = 100;
+            animPlaying = false;
+            animDirection = -1;
+            updatePlayButtonLabel();
+            saveAppState();
+          } else if (nextPct <= 0) {
+            nextPct = 0;
+            animPlaying = false;
+            animDirection = 1;
+            updatePlayButtonLabel();
+            saveAppState();
+          }
+          setUnfoldValueOnly(nextPct);
+        } else if (animTargetPct !== null) {
+          const diff = animTargetPct - appState.unfoldPct;
+          if (Math.abs(diff) < 0.4) {
+            setUnfoldValueOnly(animTargetPct);
+            animTargetPct = null;
+            saveAppState();
+          } else {
+            setUnfoldValueOnly(appState.unfoldPct + diff * Math.min(1, dt * 10));
+          }
+        }
+
+        // Smooth camera damping & adaptive framing for unfolded net
+        const lerpRate = Math.min(1, dt * 12);
+        camOrbit.theta += (camOrbit.targetTheta - camOrbit.theta) * lerpRate;
+        camOrbit.phi += (camOrbit.targetPhi - camOrbit.phi) * lerpRate;
+        camOrbit.userZoom += (camOrbit.targetZoom - camOrbit.userZoom) * lerpRate;
+
+        const u = appState.unfoldPct / 100;
+        const rSolid = foldController ? foldController.solidRadius * 2.15 : 14;
+        const rNet = foldController ? foldController.netRadius * 1.48 : 22;
+        const desiredRadius = (rSolid + (rNet - rSolid) * u) * camOrbit.userZoom;
+        camOrbit.currentRadius += (desiredRadius - camOrbit.currentRadius) * lerpRate;
+
+        if (camera) {
+          const sinPhi = Math.sin(camOrbit.phi);
+          camera.position.set(
+            camOrbit.currentRadius * sinPhi * Math.sin(camOrbit.theta),
+            camOrbit.currentRadius * Math.cos(camOrbit.phi),
+            camOrbit.currentRadius * sinPhi * Math.cos(camOrbit.theta)
+          );
+          camera.lookAt(camOrbit.targetCenter);
+        }
+
+        if (renderer && scene && camera) {
+          renderer.render(scene, camera);
+          updateProjectedLabels();
+        }
+
         animFrameId = requestAnimationFrame(tick);
-
-        // Unfold animation playback
-        if (appState.isPlayingUnfold) {
-          const speed = 0.72;
-          appState.unfold += appState.unfoldDirection * speed;
-          if (appState.unfold >= 100) {
-            appState.unfold = 100;
-            appState.isPlayingUnfold = false;
-            updateUnfoldControlsUI();
-          } else if (appState.unfold <= 0) {
-            appState.unfold = 0;
-            appState.isPlayingUnfold = false;
-            updateUnfoldControlsUI();
-          }
-          const slider = document.getElementById(`slider-unfold`);
-          if (slider) slider.value = String(appState.unfold);
-          updateUnfoldBadge();
-          rebuildSolid3D();
-        } else if (Math.abs(appState.targetUnfold - appState.unfold) > 0.2) {
-          appState.unfold += (appState.targetUnfold - appState.unfold) * 0.16;
-          if (Math.abs(appState.targetUnfold - appState.unfold) <= 0.2) {
-            appState.unfold = appState.targetUnfold;
-          }
-          const slider = document.getElementById(`slider-unfold`);
-          if (slider) slider.value = String(appState.unfold);
-          updateUnfoldBadge();
-          rebuildSolid3D();
-        }
-
-        if (appState.autoRotate && !camState.isDragging && !appState.isTopView) {
-          camState.targetTheta += 0.0055;
-        }
-
-        // Smooth camera damping
-        camState.theta += (camState.targetTheta - camState.theta) * 0.14;
-        camState.phi += (camState.targetPhi - camState.phi) * 0.14;
-        camState.radius += (camState.targetRadius - camState.radius) * 0.14;
-
-        const r = camState.radius;
-        const sinPhi = Math.sin(camState.phi);
-        camera.position.set(
-          r * sinPhi * Math.sin(camState.theta),
-          r * Math.cos(camState.phi),
-          r * sinPhi * Math.cos(camState.theta)
-        );
-        camera.lookAt(0, 0, 0);
-
-        renderer.render(scene, camera);
-        updateProjectedLabels();
       }
-      tick();
+
+      animFrameId = requestAnimationFrame(tick);
     }
 
     /* ============================================================
-       4. UI Rendering & Synchronization
+       6. UI Rendering: Calculator & Dynamic Dimension Inputs
        ============================================================ */
-    function renderDimensionControls() {
-      const meta = SHAPE_META[appState.shape];
-      const dims = appState.dims[appState.shape];
-      const grid = document.getElementById(`dims-grid`);
-      const presetsRow = document.getElementById(`presets-row`);
-      const piWrap = document.getElementById(`pi-mode-container`);
-
-      if (piWrap) {
-        piWrap.style.display = appState.shape === `cylinder` ? `block` : `none`;
-      }
-
-      if (grid) {
-        let html = ``;
-        for (let i = 0; i < meta.sliders.length; i++) {
-          const sl = meta.sliders[i];
-          let maxVal = sl.max;
-          let minVal = sl.min;
-          if (appState.shape === `triangular` && sl.key === `d`) {
-            maxVal = dims.b;
-          }
-          if (appState.shape === `parallelogram` && sl.key === `s`) {
-            minVal = dims.hp;
-          }
-          const val = dims[sl.key];
-          html += `
-            <div class="dim-control">
-              <div class="dim-label-row">
-                <label class="dim-label" for="num-${sl.key}">
-                  <span>${sl.label}</span>
-                  <span class="dim-hint">${sl.hint}</span>
-                </label>
-                <div class="dim-number-wrap">
-                  <input type="number" class="dim-number" id="num-${sl.key}" min="${minVal}" max="${maxVal}" step="${sl.step}" value="${val}" oninput="handleDimNumber('${sl.key}', this.value)">
-                  <span class="dim-unit">cm</span>
-                </div>
-              </div>
-              <input type="range" id="rng-${sl.key}" aria-label="${sl.label}" min="${minVal}" max="${maxVal}" step="${sl.step}" value="${val}" oninput="handleDimSlider('${sl.key}', this.value)">
-            </div>
-          `;
-        }
-        grid.innerHTML = html;
-      }
-
-      if (presetsRow) {
-        let pHtml = `<span class="presets-label">課本例題預設：</span>`;
-        for (let i = 0; i < meta.presets.length; i++) {
-          pHtml += `<button type="button" class="preset-chip" onclick="applyPreset(${i})">${meta.presets[i].label}</button>`;
-        }
-        presetsRow.innerHTML = pHtml;
-      }
+    function fmt(n) {
+      if (Math.abs(n - Math.round(n)) < 0.005) return String(Math.round(n));
+      return n.toFixed(2).replace(/\.?0+$/, '');
     }
 
-    function renderCalculator() {
-      const report = computeGeometryReport();
-      const meta = SHAPE_META[appState.shape];
+    function fmtArea(n) {
+      if (Math.abs(n - Math.round(n)) < 0.005) return String(Math.round(n));
+      return n.toFixed(1);
+    }
 
-      const totalEl = document.getElementById(`total-area-value`);
-      if (totalEl) totalEl.textContent = fmtFixed(report.totalSurface);
+    function updateCalculatorDisplay(spec) {
+      const valTsa = document.getElementById('val-tsa');
+      const summaryEl = document.getElementById('tsa-summary-formula');
+      const valBase1 = document.getElementById('val-base-1');
+      const mathBase1 = document.getElementById('math-base-1');
+      const valBase2 = document.getElementById('val-base-2');
+      const mathBase2 = document.getElementById('math-base-2');
+      const valLat = document.getElementById('val-lateral');
+      const mathLat = document.getElementById('math-lateral');
+      const valTsaStep = document.getElementById('val-tsa-step');
+      const mathTsaStep = document.getElementById('math-tsa-step');
 
-      const piEl = document.getElementById(`total-area-pi`);
-      if (piEl) {
-        if (report.piExprTotal) {
-          piEl.style.display = `block`;
-          piEl.textContent = report.piExprTotal;
+      if (valTsa) valTsa.textContent = fmtArea(spec.tsa);
+      if (summaryEl) {
+        summaryEl.textContent = `2 × ${fmtArea(spec.baseArea)} + ${fmtArea(spec.lateralArea)} = ${fmtArea(spec.tsa)} cm²`;
+      }
+      if (valBase1) valBase1.textContent = `${fmtArea(spec.baseArea)} cm²`;
+      if (mathBase1) mathBase1.textContent = spec.baseFormulaHtml;
+
+      if (valBase2) valBase2.textContent = `${fmtArea(spec.twoBasesArea)} cm²`;
+      if (mathBase2) mathBase2.textContent = `底面積 × 2 = ${fmtArea(spec.baseArea)} × 2 = ${fmtArea(spec.twoBasesArea)} cm²`;
+
+      if (valLat) valLat.textContent = `${fmtArea(spec.lateralArea)} cm²`;
+      if (mathLat) {
+        const sideSumExpr = spec.sideLengths.map(function (len) { return fmt(len); }).join(' + ');
+        const eachSideExpr = spec.sideLengths.map(function (len) {
+          return `(${fmt(len)}×${fmt(spec.height)})`;
+        }).join(' + ');
+        if (appState.unfoldMode === 'strip') {
+          mathLat.innerHTML = `<strong>連排公式：</strong>底面周界 × 高 = (${sideSumExpr}) × ${fmt(spec.height)} = ${fmt(spec.perimeter)} × ${fmt(spec.height)} = ${fmtArea(spec.lateralArea)} cm²`;
         } else {
-          piEl.style.display = `none`;
+          mathLat.innerHTML = `<strong>逐塊拆解相加：</strong>${eachSideExpr} = ${fmtArea(spec.lateralArea)} cm²`;
         }
       }
 
-      const basePct = report.totalSurface > 0 ? Math.round((report.totalBase / report.totalSurface) * 100) : 50;
-      const latPct = 100 - basePct;
-
-      const barBase = document.getElementById(`ratio-bar-base`);
-      const barLat = document.getElementById(`ratio-bar-lateral`);
-      if (barBase) barBase.style.width = `${basePct}%`;
-      if (barLat) barLat.style.width = `${latPct}%`;
-
-      const basePctEl = document.getElementById(`base-share-pct`);
-      const latPctEl = document.getElementById(`lateral-share-pct`);
-      if (basePctEl) basePctEl.textContent = `${basePct}%`;
-      if (latPctEl) latPctEl.textContent = `${latPct}%`;
-
-      const baseTotalEl = document.getElementById(`base-total-val`);
-      const baseSingleEl = document.getElementById(`base-single-sub`);
-      if (baseTotalEl) baseTotalEl.textContent = `${fmtFixed(report.totalBase)} cm²`;
-      if (baseSingleEl) baseSingleEl.textContent = `單底面積：${fmtFixed(report.singleBase)} cm²`;
-
-      const latTotalEl = document.getElementById(`lateral-total-val`);
-      if (latTotalEl) latTotalEl.textContent = `${fmtFixed(report.totalLateral)} cm²`;
-
-      const derivedEl = document.getElementById(`derived-note`);
-      if (derivedEl) {
-        derivedEl.style.display = `flex`;
-        derivedEl.innerHTML = report.derivedHtml;
+      if (valTsaStep) valTsaStep.textContent = `${fmtArea(spec.tsa)} cm²`;
+      if (mathTsaStep) {
+        mathTsaStep.textContent = `2 個底面積 + 側面總面積 = ${fmtArea(spec.twoBasesArea)} + ${fmtArea(spec.lateralArea)} = ${fmtArea(spec.tsa)} cm²`;
       }
 
-      const facesEl = document.getElementById(`faces-list`);
-      if (facesEl) {
-        let fHtml = ``;
-        for (let i = 0; i < report.faces.length; i++) {
-          const f = report.faces[i];
-          const sw = f.kind === `base` ? `base` : `lateral`;
-          fHtml += `
-            <div class="face-row">
-              <span class="swatch ${sw}" aria-hidden="true"></span>
-              <div>
-                <div class="face-name">${f.name}</div>
-                <div class="face-calc">${f.calc}</div>
-              </div>
-              <div class="face-area">${f.area}</div>
-            </div>
-          `;
-        }
-        facesEl.innerHTML = fHtml;
-      }
-
-      const stepsEl = document.getElementById(`steps-list`);
-      if (stepsEl) {
-        let sHtml = ``;
-        for (let i = 0; i < report.steps.length; i++) {
-          const st = report.steps[i];
-          sHtml += `
-            <div class="step-card">
-              <div class="step-head">
-                <span class="step-badge ${st.badge}">${st.badgeText}</span>
-                <span class="step-title">${st.title}</span>
-              </div>
-              <div class="step-formula">${st.formula}</div>
-              <div class="step-work">${st.work}</div>
-            </div>
-          `;
-        }
-        stepsEl.innerHTML = sHtml;
-      }
-
-      const tipEl = document.getElementById(`concept-tip`);
-      if (tipEl) {
-        tipEl.innerHTML = `<div class="concept-tip-title">中一數學解題提示 · ${meta.name}</div><div>${meta.tip}</div>`;
-      }
+      // Highlight active row in reference table
+      const rows = document.querySelectorAll('#ref-table-body tr');
+      rows.forEach(function (row) {
+        row.classList.toggle('is-current-row', row.dataset.shapeRow === appState.shape);
+      });
     }
 
-    function updateUnfoldBadge() {
-      const badge = document.getElementById(`unfold-percent-badge`);
-      if (!badge) return;
-      const pct = Math.round(appState.unfold);
-      let label = `半展開狀態`;
-      if (pct === 0) label = `立體摺合`;
-      else if (pct === 100) label = `平面展開圖`;
-      badge.textContent = `${pct}% · ${label}`;
-
-      const s0 = document.getElementById(`snap-0`);
-      const s50 = document.getElementById(`snap-50`);
-      const s100 = document.getElementById(`snap-100`);
-      if (s0) s0.classList.toggle(`is-active`, pct === 0);
-      if (s50) s50.classList.toggle(`is-active`, pct === 50);
-      if (s100) s100.classList.toggle(`is-active`, pct === 100);
-    }
-
-    function updateUnfoldControlsUI() {
-      const btn = document.getElementById(`btn-play-unfold`);
-      if (!btn) return;
-      if (appState.isPlayingUnfold) {
-        btn.textContent = `⏸ 暫停動畫`;
-      } else {
-        btn.textContent = appState.unfold >= 99 ? `↺ 摺回立體` : `▶ 自動展開`;
-      }
-    }
-
-    function updateHudButtons() {
-      const colorBtn = document.getElementById(`btn-color-toggle`);
-      const legend = document.getElementById(`color-legend`);
-      if (colorBtn) {
-        colorBtn.classList.toggle(`is-on`, appState.colorCoded);
-        colorBtn.textContent = appState.colorCoded ? `底紅側藍：開` : `原色實物模式`;
-      }
-      if (legend) {
-        legend.innerHTML = appState.colorCoded
-          ? `<span class="swatch base" aria-hidden="true"></span><span>底面 (紅色)</span><span class="swatch lateral" aria-hidden="true"></span><span>側面 (藍色)</span>`
-          : `<span class="swatch neutral" aria-hidden="true"></span><span>實物原色模式（點擊切換色彩標記）</span>`;
-      }
-
-      const lblBtn = document.getElementById(`btn-labels-toggle`);
-      if (lblBtn) {
-        lblBtn.classList.toggle(`is-on`, appState.showLabels);
-        lblBtn.textContent = appState.showLabels ? `標註：開` : `標註：關`;
-      }
-
-      const rotBtn = document.getElementById(`btn-autorotate`);
-      if (rotBtn) rotBtn.classList.toggle(`is-on`, appState.autoRotate);
-
-      const topBtn = document.getElementById(`btn-topview`);
-      if (topBtn) topBtn.classList.toggle(`is-on`, appState.isTopView);
-
-      const piExact = document.getElementById(`pi-btn-exact`);
-      const pi314 = document.getElementById(`pi-btn-314`);
-      if (piExact) piExact.classList.toggle(`is-active`, appState.piMode === `pi`);
-      if (pi314) pi314.classList.toggle(`is-active`, appState.piMode === `3.14`);
-    }
-
-    function computeIdealCameraRadius() {
+    function getDimensionDefinitions() {
       const s = appState.shape;
       const d = appState.dims[s];
-      let span = 18;
-      if (s === `parallelogram`) span = Math.max(d.b + d.H * 2, d.hp * 2 + d.H);
-      else if (s === `cuboid`) span = Math.max(d.L + d.H * 2, d.W * 2 + d.H);
-      else if (s === `cube`) span = d.a * 3.2;
-      else if (s === `triangular`) span = Math.max(d.b + d.H * 1.6, d.ht * 2 + d.H);
-      else if (s === `cylinder`) span = Math.max(2 * Math.PI * d.r, d.H + 4 * d.r);
-      return Math.min(82, Math.max(18, span * 1.15));
+      if (s === 'cuboid') {
+        return [
+          { key: 'length', label: '長 (l)', min: 1, max: 15, step: 0.5, val: d.length },
+          { key: 'width', label: '闊 (w)', min: 1, max: 15, step: 0.5, val: d.width },
+          { key: 'height', label: '高 (h)', min: 1, max: 15, step: 0.5, val: d.height }
+        ];
+      }
+      if (s === 'cube') {
+        return [
+          { key: 'side', label: '邊長（長＝闊＝高）', min: 1, max: 15, step: 0.5, val: d.side }
+        ];
+      }
+      if (s === 'parallelogram') {
+        return [
+          { key: 'base', label: '底邊長（長）', min: 2, max: 15, step: 0.5, val: d.base },
+          { key: 'baseHeight', label: '底高（垂直高）', min: 1, max: 12, step: 0.5, val: d.baseHeight },
+          { key: 'slant', label: '斜邊長（闊，須 ≥ 底高）', min: 1, max: 15, step: 0.5, val: d.slant },
+          { key: 'height', label: '柱高（高）', min: 1, max: 15, step: 0.5, val: d.height }
+        ];
+      }
+      if (s === 'triangle') {
+        const defs = [
+          { key: 'base', label: '底邊長（長）', min: 2, max: 15, step: 0.5, val: d.base },
+          { key: 'baseHeight', label: '底高（垂直高）', min: 1, max: 12, step: 0.5, val: d.baseHeight },
+          { key: 'height', label: '柱高（高）', min: 1, max: 15, step: 0.5, val: d.height }
+        ];
+        if (d.triType === 'custom') {
+          defs.splice(2, 0, {
+            key: 'apexOffset',
+            label: '頂點水平偏移',
+            min: -4,
+            max: 14,
+            step: 0.5,
+            val: d.apexOffset
+          });
+        }
+        return defs;
+      }
+      if (s === 'trapezoid') {
+        return [
+          { key: 'topBase', label: '上底', min: 1, max: 14, step: 0.5, val: d.topBase },
+          { key: 'bottomBase', label: '下底（長）', min: 2, max: 16, step: 0.5, val: d.bottomBase },
+          { key: 'baseHeight', label: '底高（垂直高）', min: 1, max: 12, step: 0.5, val: d.baseHeight },
+          { key: 'height', label: '柱高（高）', min: 1, max: 15, step: 0.5, val: d.height }
+        ];
+      }
+      return [];
     }
 
-    /* ============================================================
-       5. Hoisted Event Handlers
-       ============================================================ */
-    function selectShape(shapeKey) {
-      if (!SHAPE_META[shapeKey]) return;
-      appState.shape = shapeKey;
+    function renderSubPresets() {
+      const container = document.getElementById('sub-preset-row');
+      if (!container) return;
+      container.innerHTML = '';
 
-      const keys = Object.keys(SHAPE_META);
-      for (let i = 0; i < keys.length; i++) {
-        const k = keys[i];
-        const btn = document.getElementById(`tab-${k}`);
-        if (btn) {
-          const active = k === shapeKey;
-          btn.classList.toggle(`is-active`, active);
-          btn.setAttribute(`aria-selected`, active ? `true` : `false`);
+      const s = appState.shape;
+      const d = appState.dims[s];
+      let presets = [];
+
+      if (s === 'triangle') {
+        presets = [
+          { label: `等腰三角形`, active: d.triType === 'isosceles', action: `setTriangleType('isosceles')` },
+          { label: `直角三角形`, active: d.triType === 'right', action: `setTriangleType('right')` },
+          { label: `自訂頂點偏移`, active: d.triType === 'custom', action: `setTriangleType('custom')` }
+        ];
+      } else if (s === 'trapezoid') {
+        presets = [
+          { label: `等腰梯形`, active: d.trapType === 'isosceles', action: `setTrapezoidType('isosceles')` },
+          { label: `直角梯形`, active: d.trapType === 'right', action: `setTrapezoidType('right')` }
+        ];
+      }
+
+      for (let i = 0; i < presets.length; i++) {
+        const p = presets[i];
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'icon-pill-btn';
+        btn.setAttribute('aria-pressed', p.active ? 'true' : 'false');
+        btn.setAttribute('onclick', p.action);
+        btn.textContent = p.label;
+        container.appendChild(btn);
+      }
+    }
+
+    function listElRef(kind, dimKey) {
+      const list = document.getElementById('dim-controls-list');
+      if (!list) return null;
+      return list.querySelector(`[data-dim-role="${kind}-${dimKey}"]`);
+    }
+
+    function renderDimensionControls() {
+      const listEl = document.getElementById('dim-controls-list');
+      const noteEl = document.getElementById('constraint-note');
+      if (!listEl) return;
+
+      renderSubPresets();
+      listEl.innerHTML = '';
+      if (noteEl) noteEl.textContent = '';
+
+      const defs = getDimensionDefinitions();
+      for (let i = 0; i < defs.length; i++) {
+        const def = defs[i];
+        const row = document.createElement('div');
+        row.className = 'dim-row';
+
+        const sliderId = `slider-dim-${def.key}`;
+        const inputId = `input-dim-${def.key}`;
+
+        row.innerHTML = `
+          <div class="dim-label-line">
+            <label for="${inputId}">${def.label}</label>
+            <span class="dim-sub-hint">${def.min} – ${def.max} cm</span>
+          </div>
+          <div class="dim-input-pair">
+            <input type="range" id="${sliderId}" data-dim-role="slider-${def.key}" min="${def.min}" max="${def.max}" step="${def.step}" value="${def.val}" oninput="syncDimFromSlider('${def.key}', this.value)">
+            <div class="num-box-wrap">
+              <input type="number" class="num-input" id="${inputId}" data-dim-role="input-${def.key}" min="${def.min}" max="${def.max}" step="${def.step}" value="${def.val}" oninput="syncDimFromNumber('${def.key}', this.value)">
+              <span class="unit-tag">cm</span>
+            </div>
+          </div>
+        `;
+        listEl.appendChild(row);
+      }
+    }
+
+    function applyDimensionUpdate(key, rawVal, fromSlider) {
+      let val = parseFloat(rawVal);
+      if (isNaN(val)) return;
+
+      const s = appState.shape;
+      const d = appState.dims[s];
+      const defs = getDimensionDefinitions();
+      const def = defs.find(function (item) { return item.key === key; });
+      if (def) {
+        val = Math.max(def.min, Math.min(def.max, val));
+      }
+      d[key] = val;
+
+      const noteEl = document.getElementById('constraint-note');
+      if (noteEl) noteEl.textContent = '';
+
+      // Enforce geometric constraints cleanly
+      if (s === 'parallelogram') {
+        if (key === 'baseHeight' && d.slant < d.baseHeight) {
+          d.slant = d.baseHeight;
+          const otherSlider = listElRef('slider', 'slant');
+          const otherInput = listElRef('input', 'slant');
+          if (otherSlider) otherSlider.value = d.slant;
+          if (otherInput) otherInput.value = d.slant;
+          if (noteEl) noteEl.textContent = `斜邊長必須大於或等於底高，已自動調整斜邊為 ${fmt(d.slant)} cm。`;
+        } else if (key === 'slant' && d.slant < d.baseHeight) {
+          d.baseHeight = d.slant;
+          const otherSlider = listElRef('slider', 'baseHeight');
+          const otherInput = listElRef('input', 'baseHeight');
+          if (otherSlider) otherSlider.value = d.baseHeight;
+          if (otherInput) otherInput.value = d.baseHeight;
+          if (noteEl) noteEl.textContent = `底高不能大於斜邊長，已自動調整底高為 ${fmt(d.baseHeight)} cm。`;
         }
       }
 
-      const bottomBadge = document.getElementById(`shape-badge-bottom`);
-      if (bottomBadge) bottomBadge.textContent = SHAPE_META[shapeKey].name;
-
-      camState.targetRadius = computeIdealCameraRadius();
-      renderDimensionControls();
-      renderCalculator();
-      rebuildSolid3D();
-      persistAppState();
-    }
-
-    function enforceShapeConstraints(key, rawVal) {
-      const s = appState.shape;
-      const dims = appState.dims[s];
-      const sl = SHAPE_META[s].sliders.find(function (item) { return item.key === key; });
-      let val = parseFloat(rawVal);
-      if (Number.isNaN(val)) return;
-
-      let minV = sl ? sl.min : 1;
-      let maxV = sl ? sl.max : 20;
-      if (s === `triangular` && key === `d`) maxV = dims.b;
-      if (s === `parallelogram` && key === `s`) minV = dims.hp;
-      val = Math.min(maxV, Math.max(minV, val));
-      dims[key] = val;
-
-      // Cross-constraints
-      if (s === `parallelogram` && key === `hp` && dims.s < val) {
-        dims.s = val;
-        const sNum = document.getElementById(`num-s`);
-        const sRng = document.getElementById(`rng-s`);
-        if (sRng) { sRng.min = String(val); sRng.value = String(val); }
-        if (sNum) { sNum.min = String(val); sNum.value = String(val); }
-      } else if (s === `parallelogram` && key === `hp`) {
-        const sRng = document.getElementById(`rng-s`);
-        const sNum = document.getElementById(`num-s`);
-        if (sRng) sRng.min = String(val);
-        if (sNum) sNum.min = String(val);
+      if (s === 'triangle') {
+        if (d.triType === 'isosceles') d.apexOffset = d.base / 2;
+        else if (d.triType === 'right') d.apexOffset = 0;
       }
 
-      if (s === `triangular` && key === `b`) {
-        const dRng = document.getElementById(`rng-d`);
-        const dNum = document.getElementById(`num-d`);
-        if (dims.d > val) dims.d = val;
-        if (dRng) { dRng.max = String(val); dRng.value = String(dims.d); }
-        if (dNum) { dNum.max = String(val); dNum.value = String(dims.d); }
-      }
-    }
-
-    function handleDimSlider(key, val) {
-      enforceShapeConstraints(key, val);
-      const numEl = document.getElementById(`num-${key}`);
-      if (numEl) numEl.value = String(appState.dims[appState.shape][key]);
-      renderCalculator();
-      rebuildSolid3D();
-      persistAppState();
-    }
-
-    function handleDimNumber(key, val) {
-      if (val === ``) return;
-      enforceShapeConstraints(key, val);
-      const rngEl = document.getElementById(`rng-${key}`);
-      if (rngEl) rngEl.value = String(appState.dims[appState.shape][key]);
-      renderCalculator();
-      rebuildSolid3D();
-      persistAppState();
-    }
-
-    function applyPreset(idx) {
-      const meta = SHAPE_META[appState.shape];
-      const preset = meta.presets[idx];
-      if (!preset) return;
-      appState.dims[appState.shape] = { ...preset.dims };
-      camState.targetRadius = computeIdealCameraRadius();
-      renderDimensionControls();
-      renderCalculator();
-      rebuildSolid3D();
-      persistAppState();
-    }
-
-    function onUnfoldSlider(val) {
-      appState.isPlayingUnfold = false;
-      const v = Math.min(100, Math.max(0, parseFloat(val) || 0));
-      appState.unfold = v;
-      appState.targetUnfold = v;
-      updateUnfoldBadge();
-      updateUnfoldControlsUI();
-      rebuildSolid3D();
-      persistAppState();
-    }
-
-    function setUnfoldTarget(pct) {
-      appState.isPlayingUnfold = false;
-      appState.unfold = pct;
-      appState.targetUnfold = pct;
-      const slider = document.getElementById(`slider-unfold`);
-      if (slider) slider.value = String(pct);
-      updateUnfoldBadge();
-      updateUnfoldControlsUI();
-      rebuildSolid3D();
-      persistAppState();
-    }
-
-    function animateUnfoldTo(pct) {
-      appState.isPlayingUnfold = false;
-      appState.targetUnfold = pct;
-      updateUnfoldControlsUI();
-      persistAppState();
-    }
-
-    function toggleUnfoldPlayback() {
-      if (appState.isPlayingUnfold) {
-        appState.isPlayingUnfold = false;
+      // Sync paired control (dedicated direction, no snap-back)
+      if (fromSlider) {
+        const numInput = listElRef('input', key);
+        if (numInput) numInput.value = val;
       } else {
-        appState.unfoldDirection = appState.unfold >= 99 ? -1 : 1;
-        appState.targetUnfold = appState.unfold;
-        appState.isPlayingUnfold = true;
+        const sliderInput = listElRef('slider', key);
+        if (sliderInput) sliderInput.value = val;
       }
-      updateUnfoldControlsUI();
+
+      refreshGeometryAndMath();
+      saveAppState();
     }
 
-    function toggleColorCoding() {
-      appState.colorCoded = !appState.colorCoded;
-      updateHudButtons();
-      rebuildSolid3D();
-      persistAppState();
+    function refreshGeometryAndMath() {
+      const spec = computePrismSpec();
+      rebuildPrism3D(spec);
+      updateCalculatorDisplay(spec);
     }
 
-    function toggleDimLabels() {
-      appState.showLabels = !appState.showLabels;
-      updateHudButtons();
-      updateProjectedLabels();
-      persistAppState();
-    }
-
-    function toggleAutoRotate() {
-      appState.autoRotate = !appState.autoRotate;
-      if (appState.autoRotate && appState.isTopView) {
-        appState.isTopView = false;
-        camState.targetPhi = 1.05;
-      }
-      updateHudButtons();
-      persistAppState();
-    }
-
-    function toggleTopView() {
-      appState.isTopView = !appState.isTopView;
-      if (appState.isTopView) {
-        appState.autoRotate = false;
-        camState.targetTheta = 0;
-        camState.targetPhi = 0.08;
-        camState.targetRadius = computeIdealCameraRadius() * 1.15;
+    function updateModeExplainer() {
+      const el = document.getElementById('mode-explainer');
+      if (!el) return;
+      if (appState.unfoldMode === 'strip') {
+        el.textContent = `連排展開模式：所有藍色側面連成一條平鋪長方形（總寬度 = 底面周界），上下各有 1 個紅色底面。`;
       } else {
-        camState.targetTheta = 0.72;
-        camState.targetPhi = 1.05;
+        el.textContent = `獨立分開拆解模式：每個藍色側面分別沿底邊獨立翻開並輕微分離，方便逐面點算尺寸。`;
       }
-      updateHudButtons();
     }
 
-    function zoomCamera(dir) {
-      const factor = dir > 0 ? 1.18 : 0.84;
-      camState.targetRadius = Math.min(95, Math.max(7, camState.targetRadius * factor));
+    function updatePlayButtonLabel() {
+      const btn = document.getElementById('btn-play-unfold');
+      if (!btn) return;
+      if (animPlaying) {
+        btn.textContent = `暫停動畫`;
+      } else if (appState.unfoldPct >= 99) {
+        btn.textContent = `摺疊動畫`;
+      } else {
+        btn.textContent = `展開動畫`;
+      }
     }
 
-    function resetCamera() {
-      appState.isTopView = false;
-      camState.targetTheta = 0.72;
-      camState.targetPhi = 1.05;
-      camState.targetRadius = computeIdealCameraRadius();
-      updateHudButtons();
-    }
-
-    function setPiMode(mode) {
-      appState.piMode = mode;
-      updateHudButtons();
-      renderCalculator();
-      persistAppState();
+    function setUnfoldValueOnly(pct) {
+      const clamped = Math.max(0, Math.min(100, pct));
+      appState.unfoldPct = clamped;
+      const slider = document.getElementById('unfold-slider');
+      const pctLabel = document.getElementById('unfold-pct');
+      if (slider) slider.value = Math.round(clamped);
+      if (pctLabel) pctLabel.textContent = `${Math.round(clamped)}%`;
+      if (foldController) {
+        foldController.apply(clamped / 100);
+      }
+      updatePlayButtonLabel();
     }
 
     /* ============================================================
-       6. Persistence & App Initialization
+       7. Hoisted Global Event Handlers (onclick / oninput)
        ============================================================ */
-    async function persistAppState() {
-      if (!window.notebookAppApi || typeof window.notebookAppApi.setAppState !== `function`) return;
-      try {
-        await window.notebookAppApi.setAppState({
+    function selectShape(shapeId) {
+      if (!SHAPE_NAMES[shapeId]) return;
+      appState.shape = shapeId;
+
+      const btns = document.querySelectorAll('#shape-selector .seg-btn');
+      btns.forEach(function (btn) {
+        btn.setAttribute('aria-pressed', btn.dataset.shape === shapeId ? 'true' : 'false');
+      });
+
+      renderDimensionControls();
+      refreshGeometryAndMath();
+      saveAppState();
+    }
+
+    function setUnfoldMode(mode) {
+      appState.unfoldMode = mode === 'separated' ? 'separated' : 'strip';
+      const stripBtn = document.getElementById('mode-strip-btn');
+      const sepBtn = document.getElementById('mode-sep-btn');
+      if (stripBtn) stripBtn.setAttribute('aria-pressed', appState.unfoldMode === 'strip' ? 'true' : 'false');
+      if (sepBtn) sepBtn.setAttribute('aria-pressed', appState.unfoldMode === 'separated' ? 'true' : 'false');
+
+      updateModeExplainer();
+      refreshGeometryAndMath();
+      saveAppState();
+    }
+
+    function onUnfoldSliderInput(val) {
+      animPlaying = false;
+      animTargetPct = null;
+      setUnfoldValueOnly(parseFloat(val));
+      saveAppState();
+    }
+
+    function toggleUnfoldAnimation() {
+      animTargetPct = null;
+      if (animPlaying) {
+        animPlaying = false;
+      } else {
+        if (appState.unfoldPct >= 99) animDirection = -1;
+        else if (appState.unfoldPct <= 1) animDirection = 1;
+        animPlaying = true;
+      }
+      updatePlayButtonLabel();
+    }
+
+    function animateToUnfold(targetPct) {
+      animPlaying = false;
+      animTargetPct = targetPct;
+      if (targetPct > 80 && camOrbit.targetPhi > 0.6) {
+        // Slightly tilt upward so unfolded net is comfortably readable
+        camOrbit.targetPhi = 0.55;
+      } else if (targetPct === 0 && camOrbit.targetPhi < 0.4) {
+        camOrbit.targetPhi = 0.92;
+      }
+      updatePlayButtonLabel();
+    }
+
+    function syncDimFromSlider(key, val) {
+      applyDimensionUpdate(key, val, true);
+    }
+
+    function syncDimFromNumber(key, val) {
+      applyDimensionUpdate(key, val, false);
+    }
+
+    function setTriangleType(triType) {
+      const d = appState.dims.triangle;
+      d.triType = triType;
+      if (triType === 'isosceles') d.apexOffset = d.base / 2;
+      else if (triType === 'right') d.apexOffset = 0;
+      renderDimensionControls();
+      refreshGeometryAndMath();
+      saveAppState();
+    }
+
+    function setTrapezoidType(trapType) {
+      appState.dims.trapezoid.trapType = trapType;
+      renderDimensionControls();
+      refreshGeometryAndMath();
+      saveAppState();
+    }
+
+    function resetCurrentDimensions() {
+      const s = appState.shape;
+      appState.dims[s] = JSON.parse(JSON.stringify(DEFAULT_DIMS[s]));
+      renderDimensionControls();
+      refreshGeometryAndMath();
+      saveAppState();
+    }
+
+    function resetCameraView() {
+      camOrbit.targetTheta = 0.68;
+      camOrbit.targetPhi = 0.92;
+      camOrbit.targetZoom = 1.0;
+    }
+
+    function setTopDownView() {
+      camOrbit.targetTheta = 0.0;
+      camOrbit.targetPhi = 0.14;
+      camOrbit.targetZoom = 1.0;
+      if (appState.unfoldPct < 95) {
+        animateToUnfold(100);
+      }
+    }
+
+    function adjustZoom(factor) {
+      camOrbit.targetZoom = Math.max(0.45, Math.min(2.4, camOrbit.targetZoom * factor));
+    }
+
+    function toggleLabels() {
+      appState.showLabels = !appState.showLabels;
+      const btn = document.getElementById('btn-toggle-labels');
+      if (btn) btn.setAttribute('aria-pressed', appState.showLabels ? 'true' : 'false');
+      syncLabelsDom();
+      saveAppState();
+    }
+
+    function toggleQuizMask() {
+      appState.quizMasked = !appState.quizMasked;
+      applyQuizMaskUi();
+      saveAppState();
+    }
+
+    function applyQuizMaskUi() {
+      const btn = document.getElementById('btn-quiz-mask');
+      if (btn) btn.setAttribute('aria-pressed', appState.quizMasked ? 'true' : 'false');
+      if (btn) btn.textContent = appState.quizMasked ? '顯示答案' : '課堂遮罩';
+
+      const targets = [
+        document.getElementById('val-tsa'),
+        document.getElementById('tsa-summary-formula'),
+        document.getElementById('val-base-1'),
+        document.getElementById('val-base-2'),
+        document.getElementById('val-lateral'),
+        document.getElementById('val-tsa-step'),
+        document.getElementById('math-base-1'),
+        document.getElementById('math-base-2'),
+        document.getElementById('math-lateral'),
+        document.getElementById('math-tsa-step')
+      ];
+      for (let i = 0; i < targets.length; i++) {
+        if (targets[i]) targets[i].classList.toggle('masked-ans', appState.quizMasked);
+      }
+    }
+
+    function setFaceHighlight(mode) {
+      faceHighlightMode = mode;
+      updateFaceHighlightVisuals();
+    }
+
+    /* ============================================================
+       8. State Persistence (notebookAppApi + Standalone Safe Fallback)
+       ============================================================ */
+    let saveTimer = null;
+
+    function saveAppState() {
+      if (!window.notebookAppApi || typeof window.notebookAppApi.setAppState !== 'function') return;
+      if (saveTimer) clearTimeout(saveTimer);
+      saveTimer = setTimeout(function () {
+        window.notebookAppApi.setAppState({
           shape: appState.shape,
-          dims: appState.dims,
-          unfold: Math.round(appState.unfold),
-          colorCoded: appState.colorCoded,
+          unfoldMode: appState.unfoldMode,
+          unfoldPct: Math.round(appState.unfoldPct),
           showLabels: appState.showLabels,
-          piMode: appState.piMode
+          quizMasked: appState.quizMasked,
+          dims: appState.dims
         });
-      } catch (_) {}
+      }, 150);
     }
 
     async function initApp() {
-      initThree();
-
-      if (window.notebookAppApi && typeof window.notebookAppApi.getAppState === `function`) {
-        try {
-          const saved = await window.notebookAppApi.getAppState();
-          if (saved && typeof saved === `object`) {
-            if (saved.shape && SHAPE_META[saved.shape]) appState.shape = saved.shape;
-            if (saved.dims && typeof saved.dims === `object`) {
-              const keys = Object.keys(SHAPE_META);
-              for (let i = 0; i < keys.length; i++) {
-                const k = keys[i];
-                if (saved.dims[k]) {
-                  appState.dims[k] = { ...SHAPE_META[k].defaultDims, ...saved.dims[k] };
-                }
+      // Restore saved state via notebookAppApi if available
+      try {
+        const saved = window.notebookAppApi && typeof window.notebookAppApi.getAppState === 'function'
+          ? await window.notebookAppApi.getAppState()
+          : null;
+        if (saved && typeof saved === 'object') {
+          if (saved.shape && SHAPE_NAMES[saved.shape]) appState.shape = saved.shape;
+          if (saved.unfoldMode === 'strip' || saved.unfoldMode === 'separated') appState.unfoldMode = saved.unfoldMode;
+          if (typeof saved.unfoldPct === 'number') appState.unfoldPct = Math.max(0, Math.min(100, saved.unfoldPct));
+          if (typeof saved.showLabels === 'boolean') appState.showLabels = saved.showLabels;
+          if (typeof saved.quizMasked === 'boolean') appState.quizMasked = saved.quizMasked;
+          if (saved.dims && typeof saved.dims === 'object') {
+            Object.keys(DEFAULT_DIMS).forEach(function (k) {
+              if (saved.dims[k] && typeof saved.dims[k] === 'object') {
+                appState.dims[k] = Object.assign({}, DEFAULT_DIMS[k], saved.dims[k]);
               }
-            }
-            if (typeof saved.unfold === `number`) {
-              appState.unfold = Math.min(100, Math.max(0, saved.unfold));
-              appState.targetUnfold = appState.unfold;
-            }
-            if (typeof saved.colorCoded === `boolean`) appState.colorCoded = saved.colorCoded;
-            if (typeof saved.showLabels === `boolean`) appState.showLabels = saved.showLabels;
-            if (saved.piMode === `pi` || saved.piMode === `3.14`) appState.piMode = saved.piMode;
+            });
           }
-        } catch (_) {}
+        }
+      } catch (err) {
+        // Ignore persistence errors when running standalone
       }
 
-      const slider = document.getElementById(`slider-unfold`);
-      if (slider) slider.value = String(appState.unfold);
+      initThreeScene();
 
-      updateHudButtons();
-      updateUnfoldBadge();
-      updateUnfoldControlsUI();
-      selectShape(appState.shape);
-      camState.radius = camState.targetRadius;
-      startRenderLoop();
+      // Sync UI to initial/restored state
+      const btns = document.querySelectorAll('#shape-selector .seg-btn');
+      btns.forEach(function (btn) {
+        btn.setAttribute('aria-pressed', btn.dataset.shape === appState.shape ? 'true' : 'false');
+      });
 
-      if (window.notebookAppApi && typeof window.notebookAppApi.notifyAppReady === `function`) {
+      const stripBtn = document.getElementById('mode-strip-btn');
+      const sepBtn = document.getElementById('mode-sep-btn');
+      if (stripBtn) stripBtn.setAttribute('aria-pressed', appState.unfoldMode === 'strip' ? 'true' : 'false');
+      if (sepBtn) sepBtn.setAttribute('aria-pressed', appState.unfoldMode === 'separated' ? 'true' : 'false');
+
+      const labelBtn = document.getElementById('btn-toggle-labels');
+      if (labelBtn) labelBtn.setAttribute('aria-pressed', appState.showLabels ? 'true' : 'false');
+
+      applyQuizMaskUi();
+      updateModeExplainer();
+      renderDimensionControls();
+      refreshGeometryAndMath();
+      setUnfoldValueOnly(appState.unfoldPct);
+
+      if (window.notebookAppApi && typeof window.notebookAppApi.notifyAppReady === 'function') {
         window.notebookAppApi.notifyAppReady();
       }
     }
